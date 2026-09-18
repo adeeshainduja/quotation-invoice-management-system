@@ -8,7 +8,6 @@
 
     <link rel="stylesheet" href="{{ asset('css/quotation-login.css') }}">
 
-    {{-- Google Fonts --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
@@ -23,8 +22,6 @@
     {{-- LEFT SIDE --}}
     <section class="left-panel">
 
-        <div class="left-overlay"></div>
-
         <div class="left-content">
 
             {{-- BRAND --}}
@@ -32,19 +29,26 @@
 
                 <div class="brand-icon">
                     <svg viewBox="0 0 64 64" fill="none">
-                        <path d="M16 5H39L52 18V55C52 58.3 49.3 61 46 61H16C12.7 61 10 58.3 10 55V11C10 7.7 12.7 5 16 5Z"
-                              stroke="currentColor"
-                              stroke-width="4"/>
 
-                        <path d="M39 5V18H52"
-                              stroke="currentColor"
-                              stroke-width="4"
-                              stroke-linejoin="round"/>
+                        <path
+                            d="M16 5H39L52 18V55C52 58.3 49.3 61 46 61H16C12.7 61 10 58.3 10 55V11C10 7.7 12.7 5 16 5Z"
+                            stroke="currentColor"
+                            stroke-width="4"
+                        />
 
-                        <path d="M20 29H32M20 39H42M20 49H38"
-                              stroke="currentColor"
-                              stroke-width="4"
-                              stroke-linecap="round"/>
+                        <path
+                            d="M39 5V18H52"
+                            stroke="currentColor"
+                            stroke-width="4"
+                        />
+
+                        <path
+                            d="M20 29H32M20 39H42M20 49H38"
+                            stroke="currentColor"
+                            stroke-width="4"
+                            stroke-linecap="round"
+                        />
+
                     </svg>
                 </div>
 
@@ -55,7 +59,9 @@
 
             </div>
 
+
             <div class="brand-line"></div>
+
 
             <h2 class="tagline">
                 Create. Manage. Send. Get Paid.
@@ -141,7 +147,6 @@
             </div>
 
 
-            {{-- BOTTOM MESSAGE --}}
             <div class="support-text">
                 <span>Your Business</span>
                 <span>Our Support</span>
@@ -153,15 +158,16 @@
     </section>
 
 
-
     {{-- RIGHT SIDE --}}
     <section class="right-panel">
 
         <div class="login-card">
 
             <div class="login-header">
+
                 <h2>Welcome Back</h2>
                 <p>Sign in to your account</p>
+
             </div>
 
 
@@ -172,7 +178,7 @@
             @endif
 
 
-            @if(session('status'))
+            @if (session('status'))
                 <div class="alert-success">
                     {{ session('status') }}
                 </div>
@@ -182,6 +188,7 @@
             <form action="{{ route('login.submit') }}" method="POST">
 
                 @csrf
+
 
                 {{-- EMAIL --}}
                 <div class="form-group">
@@ -193,10 +200,12 @@
                     <div class="input-wrapper">
 
                         <span class="input-icon">
+
                             <svg viewBox="0 0 24 24">
                                 <rect x="3" y="5" width="18" height="14" rx="2"/>
                                 <path d="M4 7l8 6 8-6"/>
                             </svg>
+
                         </span>
 
                         <input
@@ -233,12 +242,15 @@
                     <div class="input-wrapper">
 
                         <span class="input-icon">
+
                             <svg viewBox="0 0 24 24">
                                 <rect x="5" y="10" width="14" height="11" rx="2"/>
                                 <path d="M8 10V7a4 4 0 018 0v3"/>
                                 <path d="M12 14v3"/>
                             </svg>
+
                         </span>
+
 
                         <input
                             id="password"
@@ -248,15 +260,23 @@
                             required
                         >
 
+
                         <button
                             type="button"
                             class="password-toggle"
                             onclick="togglePassword()"
                         >
-                            <svg id="eyeIcon" viewBox="0 0 24 24">
-                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/>
+
+                            <svg viewBox="0 0 24 24">
+
+                                <path
+                                    d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"
+                                />
+
                                 <circle cx="12" cy="12" r="3"/>
+
                             </svg>
+
                         </button>
 
                     </div>
@@ -282,7 +302,7 @@
                 </label>
 
 
-                {{-- LOGIN BUTTON --}}
+                {{-- SIGN IN --}}
                 <button type="submit" class="login-button">
 
                     <span>Sign In</span>
@@ -293,6 +313,20 @@
                     </svg>
 
                 </button>
+
+
+                {{-- CREATE ACCOUNT --}}
+                <div class="signup-section">
+
+                    <span>
+                        Don't have an account?
+                    </span>
+
+                    <a href="{{ route('register') }}">
+                        Create Account
+                    </a>
+
+                </div>
 
             </form>
 
@@ -324,11 +358,10 @@ function togglePassword()
 {
     const password = document.getElementById('password');
 
-    if (password.type === 'password') {
-        password.type = 'text';
-    } else {
-        password.type = 'password';
-    }
+    password.type =
+        password.type === 'password'
+            ? 'text'
+            : 'password';
 }
 
 </script>

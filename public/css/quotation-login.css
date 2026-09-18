@@ -797,3 +797,21 @@ body {
     }
 
 }
+
+.signup-section {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 15px;
+    color: #6b7d99;
+}
+
+.signup-section a {
+    margin-left: 4px;
+    color: #126bd2;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.signup-section a:hover {
+    text-decoration: underline;
+}
