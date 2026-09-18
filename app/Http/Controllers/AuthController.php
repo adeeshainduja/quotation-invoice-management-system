@@ -23,6 +23,7 @@ class AuthController extends Controller
         $credentials['status'] = 'ACTIVE';
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
+
             $request->session()->regenerate();
 
             return redirect()->intended(route('dashboard'));
@@ -30,7 +31,7 @@ class AuthController extends Controller
 
         return back()
             ->withErrors([
-                'email' => 'Invalid email or password.',
+                'email' => 'Invalid email address or password.',
             ])
             ->onlyInput('email');
     }
