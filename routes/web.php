@@ -44,8 +44,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/customers/{id}', [CustomerController::class, 'show'])
         ->name('customers.show');
 
+
     Route::get('/quotations', [QuotationController::class, 'index'])
-    ->name('quotations.index');
+        ->name('quotations.index');
+
+    Route::get('/quotations/create', [QuotationController::class, 'create'])
+        ->name('quotations.create');
+
+    Route::post('/quotations', [QuotationController::class, 'store'])
+        ->name('quotations.store');
 
 
     Route::post('/logout', [AuthController::class, 'logout'])
