@@ -99,24 +99,37 @@ class TemplateController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'company_id' =>
-                'required|exists:companies,id',
 
-            'document_type' =>
-                'required|in:QUOTATION,INVOICE',
+        'company_id' =>
+            'required|exists:companies,id',
 
-            'template_name' =>
-                'required|string|max:255',
+        'document_type' =>
+            'required|in:QUOTATION,INVOICE',
 
-            'header_text' =>
-                'nullable|string',
+        'template_name' =>
+            'required|string|max:255',
 
-            'footer_text' =>
-                'nullable|string',
+        'header_text' =>
+            'nullable|string',
 
-            'terms_conditions' =>
-                'nullable|string',
-        ]);
+        'footer_text' =>
+            'nullable|string',
+
+        'terms_conditions' =>
+            'nullable|string',
+
+        'primary_color' =>
+            ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+
+        'secondary_color' =>
+            ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+
+        'text_color' =>
+            ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+
+        'accent_color' =>
+            ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+    ]);
 
 
         $company = DB::table('companies')
@@ -218,8 +231,10 @@ class TemplateController extends Controller
                      * Keep null until we add advanced
                      * visual template configuration.
                      */
-                    'template_config' =>
-                        null,
+                    'template_config' => json_encode(
+                        $templateConfig,
+                        JSON_UNESCAPED_UNICODE
+                    ),
 
                     'is_default' =>
                         $isDefault ? 1 : 0,
@@ -243,4 +258,70 @@ class TemplateController extends Controller
                 'Template created successfully.'
             );
     }
+    public function show($id)
+{
+    $template = DB::table('company_templates')
+        ->where('id', $id)
+        ->first();
+
+    abort_if(!$template, 404);
+
+
+    $company = DB::table('companies')
+        ->where('id', $template->company_id)
+        ->first();
+
+    abort_if(!$company, 404);
+
+
+    $bank = DB::table('company_bank_details')
+        ->where('company_id', $company->id)
+        ->first();
+
+
+    $config = [];
+
+    if ($template->template_config) {
+
+        $decoded = json_decode(
+            $template->template_config,
+            true
+        );
+
+        if (is_array($decoded)) {
+            $config = $decoded;
+        }
+    }
+
+
+    $colors = [
+
+        'primary' =>
+            $config['primary_color']
+            ?? '#163B65',
+
+        'secondary' =>
+            $config['secondary_color']
+            ?? '#EAF2FB',
+
+        'text' =>
+            $config['text_color']
+            ?? '#0F172A',
+
+        'accent' =>
+            $config['accent_color']
+            ?? '#1474E8',
+    ];
+
+
+    return view(
+        'templates.show',
+        compact(
+            'template',
+            'company',
+            'bank',
+            'colors'
+        )
+    );
+}
 }

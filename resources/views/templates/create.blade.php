@@ -462,7 +462,206 @@
 
             </div>
 
+                <div class="template-colors">
 
+                <h3>
+                    <i data-lucide="palette"></i>
+                    Template Colours
+                </h3>
+
+                <p class="color-help">
+                    Choose the colours used when generating this
+                    quotation or invoice.
+                </p>
+
+
+                <div class="color-grid">
+
+                    {{-- PRIMARY --}}
+                    <div class="color-field">
+
+                        <label>
+                            Primary Colour
+                        </label>
+
+                        <div class="color-control">
+
+                            <input
+                                type="color"
+                                id="primaryColor"
+                                name="primary_color"
+                                value="{{ old(
+                                    'primary_color',
+                                    '#163B65'
+                                ) }}"
+                            >
+
+                            <input
+                                type="text"
+                                id="primaryColorText"
+                                value="{{ old(
+                                    'primary_color',
+                                    '#163B65'
+                                ) }}"
+                                maxlength="7"
+                            >
+
+                        </div>
+
+                        <small>
+                            Headers, titles and main branding
+                        </small>
+
+                    </div>
+
+
+                    {{-- SECONDARY --}}
+                    <div class="color-field">
+
+                        <label>
+                            Secondary Colour
+                        </label>
+
+                        <div class="color-control">
+
+                            <input
+                                type="color"
+                                id="secondaryColor"
+                                name="secondary_color"
+                                value="{{ old(
+                                    'secondary_color',
+                                    '#EAF2FB'
+                                ) }}"
+                            >
+
+                            <input
+                                type="text"
+                                id="secondaryColorText"
+                                value="{{ old(
+                                    'secondary_color',
+                                    '#EAF2FB'
+                                ) }}"
+                                maxlength="7"
+                            >
+
+                        </div>
+
+                        <small>
+                            Backgrounds and highlighted areas
+                        </small>
+
+                    </div>
+
+
+                    {{-- TEXT --}}
+                    <div class="color-field">
+
+                        <label>
+                            Text Colour
+                        </label>
+
+                        <div class="color-control">
+
+                            <input
+                                type="color"
+                                id="textColor"
+                                name="text_color"
+                                value="{{ old(
+                                    'text_color',
+                                    '#0F172A'
+                                ) }}"
+                            >
+
+                            <input
+                                type="text"
+                                id="textColorText"
+                                value="{{ old(
+                                    'text_color',
+                                    '#0F172A'
+                                ) }}"
+                                maxlength="7"
+                            >
+
+                        </div>
+
+                        <small>
+                            Main document text
+                        </small>
+
+                    </div>
+
+
+                    {{-- ACCENT --}}
+                    <div class="color-field">
+
+                        <label>
+                            Accent Colour
+                        </label>
+
+                        <div class="color-control">
+
+                            <input
+                                type="color"
+                                id="accentColor"
+                                name="accent_color"
+                                value="{{ old(
+                                    'accent_color',
+                                    '#1474E8'
+                                ) }}"
+                            >
+
+                            <input
+                                type="text"
+                                id="accentColorText"
+                                value="{{ old(
+                                    'accent_color',
+                                    '#1474E8'
+                                ) }}"
+                                maxlength="7"
+                            >
+
+                        </div>
+
+                        <small>
+                            Totals, borders and highlights
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                {{-- LIVE PREVIEW --}}
+                <div
+                    class="template-color-preview"
+                    id="templateColorPreview"
+                >
+
+                    <div class="preview-header">
+                        INVOICE
+                    </div>
+
+                    <div class="preview-content">
+
+                        <strong>
+                            Example Company
+                        </strong>
+
+                        <p>
+                            Example customer invoice preview
+                        </p>
+
+                        <div class="preview-line"></div>
+
+                        <div class="preview-total">
+                            Total: LKR 125,000.00
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
 
             <section class="form-card terms-card">
 
@@ -519,7 +718,167 @@
 
 
 <script>
-    lucide.createIcons();
+
+function setupColorPicker(
+    colorId,
+    textId,
+    callback
+) {
+    const picker =
+        document.getElementById(colorId);
+
+    const text =
+        document.getElementById(textId);
+
+
+    if (!picker || !text) {
+        return;
+    }
+
+
+    picker.addEventListener(
+        'input',
+        function () {
+
+            text.value =
+                picker.value.toUpperCase();
+
+            callback();
+        }
+    );
+
+
+    text.addEventListener(
+        'input',
+        function () {
+
+            let value =
+                text.value.trim();
+
+
+            if (!value.startsWith('#')) {
+
+                value =
+                    '#' + value;
+            }
+
+
+            if (
+                /^#[0-9A-Fa-f]{6}$/.test(value)
+            ) {
+
+                picker.value =
+                    value;
+
+                callback();
+            }
+        }
+    );
+}
+
+
+
+function updateTemplatePreview()
+{
+    const primary =
+        document.getElementById(
+            'primaryColor'
+        )?.value || '#163B65';
+
+
+    const secondary =
+        document.getElementById(
+            'secondaryColor'
+        )?.value || '#EAF2FB';
+
+
+    const text =
+        document.getElementById(
+            'textColor'
+        )?.value || '#0F172A';
+
+
+    const accent =
+        document.getElementById(
+            'accentColor'
+        )?.value || '#1474E8';
+
+
+    const preview =
+        document.getElementById(
+            'templateColorPreview'
+        );
+
+
+    if (!preview) {
+        return;
+    }
+
+
+    preview
+        .querySelector('.preview-header')
+        .style.backgroundColor =
+            primary;
+
+
+    preview
+        .querySelector('.preview-content')
+        .style.backgroundColor =
+            secondary;
+
+
+    preview
+        .querySelector('.preview-content')
+        .style.color =
+            text;
+
+
+    preview
+        .querySelector('.preview-line')
+        .style.backgroundColor =
+            accent;
+
+
+    preview
+        .querySelector('.preview-total')
+        .style.color =
+            accent;
+}
+
+
+
+setupColorPicker(
+    'primaryColor',
+    'primaryColorText',
+    updateTemplatePreview
+);
+
+
+setupColorPicker(
+    'secondaryColor',
+    'secondaryColorText',
+    updateTemplatePreview
+);
+
+
+setupColorPicker(
+    'textColor',
+    'textColorText',
+    updateTemplatePreview
+);
+
+
+setupColorPicker(
+    'accentColor',
+    'accentColorText',
+    updateTemplatePreview
+);
+
+
+updateTemplatePreview();
+
+lucide.createIcons();
+
 </script>
 
 

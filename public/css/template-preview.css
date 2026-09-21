@@ -1,0 +1,379 @@
+.breadcrumb {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.breadcrumb a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+
+.preview-page-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.preview-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.preview-page-heading h1 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 30px;
+}
+
+.preview-page-heading p {
+    margin: 7px 0 0;
+    color: #64748b;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 16px;
+    border: 1px solid #d7e0ea;
+    border-radius: 7px;
+    background: white;
+    color: #42536e;
+    text-decoration: none;
+}
+
+.default-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    background: #dcf7e8;
+    color: #16834c;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+.template-settings {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    overflow: hidden;
+    margin-bottom: 22px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.template-settings > div {
+    padding: 13px;
+    border-right: 1px solid #e2e8f0;
+    background: white;
+}
+
+.template-settings span {
+    display: block;
+    margin-bottom: 4px;
+    color: #8491a4;
+    font-size: 11px;
+}
+
+.template-settings strong {
+    font-size: 13px;
+    color: #25354d;
+}
+
+
+.preview-background {
+    padding: 24px;
+    border: 1px solid #dae2eb;
+    border-radius: 10px;
+    background: #e9edf3;
+}
+
+.preview-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 900px;
+    margin: 0 auto 12px;
+    color: #526174;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.preview-label svg {
+    width: 17px;
+}
+
+
+.template-document {
+    --primary: #163B65;
+    --secondary: #EAF2FB;
+    --text: #0F172A;
+    --accent: #1474E8;
+
+    width: 100%;
+    max-width: 900px;
+    min-height: 1050px;
+    margin: auto;
+    overflow: hidden;
+    background: #ffffff;
+    color: var(--text);
+    box-shadow: 0 8px 30px rgba(15, 23, 42, .13);
+}
+
+
+.top-color {
+    height: 8px;
+    background: var(--primary);
+}
+
+
+.document-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+    padding: 38px 42px 28px;
+}
+
+.company-info {
+    display: flex;
+    gap: 15px;
+}
+
+.company-logo {
+    max-width: 90px;
+    max-height: 65px;
+    object-fit: contain;
+}
+
+.company-info h2 {
+    margin: 0 0 8px;
+    color: var(--primary);
+}
+
+.company-info p {
+    margin: 3px 0;
+    color: #64748b;
+    font-size: 12px;
+}
+
+
+.document-title {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.document-title h1 {
+    margin: 0 0 8px;
+    color: var(--primary);
+    font-size: 32px;
+}
+
+.document-title strong {
+    font-size: 14px;
+}
+
+.document-title span {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+
+.template-header-text {
+    margin: 0 42px 22px;
+    padding: 13px 16px;
+    border-left: 4px solid var(--accent);
+    background: var(--secondary);
+    font-size: 12px;
+}
+
+
+.customer-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    padding: 25px 42px;
+    background: var(--secondary);
+}
+
+.small-title {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--primary);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.customer-section h3 {
+    margin: 0 0 7px;
+}
+
+.customer-section p {
+    margin: 3px 0;
+    font-size: 12px;
+}
+
+.meta p {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.meta span {
+    color: #64748b;
+}
+
+
+.items {
+    padding: 28px 42px 15px;
+}
+
+.items table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.items th {
+    padding: 11px;
+    background: var(--primary);
+    color: white;
+    text-align: left;
+    font-size: 11px;
+}
+
+.items td {
+    padding: 14px 11px;
+    border-bottom: 1px solid #e5e9ef;
+    font-size: 12px;
+}
+
+.items td strong,
+.items td small {
+    display: block;
+}
+
+.items td small {
+    margin-top: 4px;
+    color: #7c8796;
+}
+
+.number {
+    text-align: right !important;
+}
+
+
+.totals-container {
+    display: grid;
+    grid-template-columns: 1fr 310px;
+    padding: 15px 42px 30px;
+}
+
+.totals > div {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 12px;
+}
+
+.grand-total {
+    margin-top: 5px;
+    padding: 13px !important;
+    background: var(--primary);
+    color: white;
+}
+
+
+.bank-details,
+.terms {
+    margin: 10px 42px 20px;
+    padding: 17px;
+    border-radius: 6px;
+    background: var(--secondary);
+    font-size: 11px;
+}
+
+.bank-details h4,
+.terms h4 {
+    margin: 0 0 12px;
+    color: var(--primary);
+}
+
+
+.signature-container {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    padding: 25px 42px;
+}
+
+.signature {
+    text-align: center;
+}
+
+.signature img {
+    max-width: 130px;
+    max-height: 55px;
+}
+
+.signature-line {
+    margin-top: 15px;
+    border-top: 1px solid #64748b;
+}
+
+.signature strong {
+    display: block;
+    margin-top: 7px;
+    font-size: 11px;
+}
+
+
+.document-footer {
+    margin-top: 25px;
+    padding: 18px 42px;
+    background: var(--primary);
+    color: white;
+    text-align: center;
+    font-size: 11px;
+}
+
+
+@media (max-width: 1000px) {
+
+    .template-settings {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+
+@media (max-width: 700px) {
+
+    .preview-page-heading {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .template-settings {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .document-header,
+    .customer-section {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+    }
+
+    .document-title {
+        align-items: flex-start;
+    }
+
+    .totals-container {
+        grid-template-columns: 1fr;
+    }
+}

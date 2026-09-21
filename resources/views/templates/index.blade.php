@@ -2,13 +2,16 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
 
     <title>Templates</title>
+
 
     <link
         rel="stylesheet"
@@ -20,17 +23,24 @@
         href="{{ asset('css/templates.css') }}"
     >
 
+
     <script src="https://unpkg.com/lucide@latest"></script>
+
 </head>
 
+
 <body>
+
 
 @include('partials.sidebar')
 
 
 <div class="page">
 
+
+    {{-- TOP BAR --}}
     <header class="topbar">
+
 
         <button
             type="button"
@@ -41,6 +51,7 @@
 
 
         <div class="topbar-right">
+
 
             <form
                 method="GET"
@@ -66,7 +77,9 @@
                                 ? 'selected'
                                 : '' }}
                         >
+
                             {{ $company->name }}
+
                         </option>
 
                     @endforeach
@@ -77,14 +90,19 @@
 
 
             <div class="notification">
+
                 <i data-lucide="bell"></i>
+
                 <span></span>
+
             </div>
 
 
             <div class="user">
 
+
                 <div class="avatar">
+
                     {{
                         strtoupper(
                             substr(
@@ -94,9 +112,12 @@
                             )
                         )
                     }}
+
                 </div>
 
+
                 <div>
+
                     <strong>
                         {{ auth()->user()->name }}
                     </strong>
@@ -104,6 +125,7 @@
                     <small>
                         Administrator
                     </small>
+
                 </div>
 
             </div>
@@ -113,8 +135,11 @@
     </header>
 
 
+
     <main>
 
+
+        {{-- BREADCRUMB --}}
         <div class="breadcrumb">
 
             <a href="{{ route('dashboard') }}">
@@ -128,7 +153,10 @@
         </div>
 
 
+
+        {{-- PAGE HEADING --}}
         <div class="templates-heading">
+
 
             <div>
 
@@ -162,20 +190,27 @@
         </div>
 
 
+
+        {{-- SUCCESS --}}
         @if(session('success'))
 
             <div class="alert-success">
+
                 {{ session('success') }}
+
             </div>
 
         @endif
 
 
+
+        {{-- FILTER --}}
         <form
             method="GET"
             action="{{ route('templates.index') }}"
             class="template-filter"
         >
+
 
             @if($companyId)
 
@@ -194,6 +229,7 @@
                     All Document Types
                 </option>
 
+
                 <option
                     value="QUOTATION"
                     {{ request('document_type') === 'QUOTATION'
@@ -202,6 +238,7 @@
                 >
                     Quotation
                 </option>
+
 
                 <option
                     value="INVOICE"
@@ -219,8 +256,11 @@
                 type="submit"
                 class="filter-btn"
             >
+
                 <i data-lucide="filter"></i>
+
                 Filter
+
             </button>
 
 
@@ -239,51 +279,108 @@
         </form>
 
 
+
+        {{-- TEMPLATE TABLE --}}
         <section class="templates-table-card">
+
 
             <div class="table-wrap">
 
+
                 <table>
+
 
                     <thead>
 
                     <tr>
+
                         <th>#</th>
-                        <th>Template Name</th>
-                        <th>Document</th>
-                        <th>Logo</th>
-                        <th>Bank</th>
-                        <th>VAT</th>
-                        <th>Signature</th>
-                        <th>Default</th>
+
+                        <th>
+                            Template Name
+                        </th>
+
+                        <th>
+                            Document
+                        </th>
+
+                        <th>
+                            Logo
+                        </th>
+
+                        <th>
+                            Bank
+                        </th>
+
+                        <th>
+                            VAT
+                        </th>
+
+                        <th>
+                            Signature
+                        </th>
+
+                        <th>
+                            Default
+                        </th>
+
+                        <th>
+                            Actions
+                        </th>
+
                     </tr>
 
                     </thead>
 
 
+
                     <tbody>
+
 
                     @forelse($templates as $template)
 
-                        <tr>
+
+                        <tr
+                            class="clickable-template-row"
+                            onclick="window.location='{{ route(
+                                'templates.show',
+                                $template->id
+                            ) }}'"
+                        >
+
 
                             <td>
+
                                 {{
                                     $templates->firstItem()
                                     + $loop->index
                                 }}
+
                             </td>
 
 
+
+                            {{-- TEMPLATE NAME --}}
                             <td>
 
-                                <strong>
+                                <a
+                                    href="{{ route(
+                                        'templates.show',
+                                        $template->id
+                                    ) }}"
+                                    class="template-name-link"
+                                    onclick="event.stopPropagation()"
+                                >
+
                                     {{ $template->template_name }}
-                                </strong>
+
+                                </a>
 
                             </td>
 
 
+
+                            {{-- DOCUMENT TYPE --}}
                             <td>
 
                                 <span
@@ -293,6 +390,7 @@
                                         )
                                     }}"
                                 >
+
                                     {{
                                         ucfirst(
                                             strtolower(
@@ -300,65 +398,110 @@
                                             )
                                         )
                                     }}
+
                                 </span>
 
                             </td>
 
 
+
+                            {{-- LOGO --}}
                             <td>
+
                                 @if($template->show_logo)
+
                                     <i
                                         data-lucide="check"
                                         class="yes-icon"
                                     ></i>
+
                                 @else
-                                    <span>-</span>
+
+                                    <span class="no-value">
+                                        -
+                                    </span>
+
                                 @endif
+
                             </td>
 
 
+
+                            {{-- BANK --}}
                             <td>
+
                                 @if($template->show_bank_details)
+
                                     <i
                                         data-lucide="check"
                                         class="yes-icon"
                                     ></i>
+
                                 @else
-                                    <span>-</span>
+
+                                    <span class="no-value">
+                                        -
+                                    </span>
+
                                 @endif
+
                             </td>
 
 
+
+                            {{-- VAT --}}
                             <td>
+
                                 @if($template->show_vat)
+
                                     <i
                                         data-lucide="check"
                                         class="yes-icon"
                                     ></i>
+
                                 @else
-                                    <span>-</span>
+
+                                    <span class="no-value">
+                                        -
+                                    </span>
+
                                 @endif
+
                             </td>
 
 
+
+                            {{-- SIGNATURE --}}
                             <td>
+
                                 @if($template->show_signature)
+
                                     <i
                                         data-lucide="check"
                                         class="yes-icon"
                                     ></i>
+
                                 @else
-                                    <span>-</span>
+
+                                    <span class="no-value">
+                                        -
+                                    </span>
+
                                 @endif
+
                             </td>
 
 
+
+                            {{-- DEFAULT --}}
                             <td>
 
                                 @if($template->is_default)
 
                                     <span class="default-badge">
+
                                         Default
+
                                     </span>
 
                                 @else
@@ -371,15 +514,41 @@
 
                             </td>
 
+
+
+                            {{-- ACTION --}}
+                            <td>
+
+                                <a
+                                    href="{{ route(
+                                        'templates.show',
+                                        $template->id
+                                    ) }}"
+                                    class="preview-template-btn"
+                                    onclick="event.stopPropagation()"
+                                    title="Preview Template"
+                                >
+
+                                    <i data-lucide="eye"></i>
+
+                                    Preview
+
+                                </a>
+
+                            </td>
+
+
                         </tr>
+
 
 
                     @empty
 
+
                         <tr>
 
                             <td
-                                colspan="8"
+                                colspan="9"
                                 class="empty"
                             >
 
@@ -397,7 +566,9 @@
 
                         </tr>
 
+
                     @endforelse
+
 
                     </tbody>
 
@@ -406,17 +577,29 @@
             </div>
 
 
+
+            {{-- PAGINATION --}}
             <div class="table-footer">
+
 
                 <span>
 
                     Showing
-                    {{ $templates->firstItem() ?? 0 }}
+
+                    {{
+                        $templates->firstItem()
+                        ?? 0
+                    }}
 
                     to
-                    {{ $templates->lastItem() ?? 0 }}
+
+                    {{
+                        $templates->lastItem()
+                        ?? 0
+                    }}
 
                     of
+
                     {{ $templates->total() }}
 
                     templates
@@ -436,8 +619,11 @@
 
 
 <script>
+
     lucide.createIcons();
+
 </script>
+
 
 </body>
 
