@@ -1,0 +1,198 @@
+.breadcrumb {
+    display: flex;
+    gap: 11px;
+    margin-bottom: 15px;
+    color: #64738e;
+    font-size: 14px;
+}
+
+.breadcrumb a {
+    color: #42618b;
+    text-decoration: none;
+}
+
+.create-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.create-heading h1 {
+    margin: 0;
+    font-size: 30px;
+}
+
+.create-heading p {
+    margin: 7px 0 0;
+    color: #63728d;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 13px 20px;
+    border: 1px solid #d6e0eb;
+    border-radius: 7px;
+    background: white;
+    color: #10274d;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.back-btn svg {
+    width: 19px;
+}
+
+.form-errors {
+    margin-bottom: 15px;
+    padding: 13px 16px;
+    border: 1px solid #ffd0d4;
+    border-radius: 7px;
+    background: #fff0f1;
+    color: #c92d38;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.form-card {
+    padding: 21px 23px;
+    background: white;
+    border: 1px solid #e0e7ef;
+    border-radius: 9px;
+}
+
+.form-card h2 {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin: 0 0 17px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e3e9f0;
+    font-size: 18px;
+}
+
+.form-card h2 svg {
+    width: 23px;
+    color: #284e82;
+}
+
+.form-card label {
+    display: block;
+    margin: 14px 0 8px;
+    color: #10234a;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.form-card label span {
+    color: #e52e38;
+}
+
+.form-card input[type="text"],
+.form-card input[type="email"],
+.form-card select,
+.form-card textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #cfd9e6;
+    border-radius: 6px;
+    outline: none;
+    background: white;
+    color: #12284e;
+    font: inherit;
+}
+
+.form-card input:focus,
+.form-card select:focus,
+.form-card textarea:focus {
+    border-color: #1975e8;
+    box-shadow: 0 0 0 3px rgba(25, 117, 232, .08);
+}
+
+.form-card textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.two-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.status-options {
+    display: flex;
+    gap: 45px;
+    padding-top: 3px;
+}
+
+.status-options label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.status-options input {
+    width: 19px;
+    height: 19px;
+    accent-color: #1474e8;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 14px;
+    margin-top: 28px;
+}
+
+.cancel-btn,
+.save-btn {
+    min-height: 50px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 30px;
+    border-radius: 7px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.cancel-btn {
+    border: 1px solid #d4deea;
+    background: white;
+    color: #10274d;
+}
+
+.save-btn {
+    gap: 9px;
+    border: 0;
+    background: #1474e8;
+    color: white;
+    cursor: pointer;
+}
+
+.save-btn svg {
+    width: 20px;
+}
+
+@media (max-width: 900px) {
+
+    .form-grid,
+    .two-columns {
+        grid-template-columns: 1fr;
+    }
+
+    .create-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 15px;
+    }
+}

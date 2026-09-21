@@ -30,11 +30,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/companies', [CompanyController::class, 'index'])
         ->name('companies.index');
 
+
     Route::get('/customers', [CustomerController::class, 'index'])
         ->name('customers.index');
 
+    Route::get('/customers/create', [CustomerController::class, 'create'])
+        ->name('customers.create');
+
+    Route::post('/customers', [CustomerController::class, 'store'])
+        ->name('customers.store');
+
     Route::get('/customers/{id}', [CustomerController::class, 'show'])
         ->name('customers.show');
+
 
     Route::post('/logout', [AuthController::class, 'logout'])
         ->name('logout');
