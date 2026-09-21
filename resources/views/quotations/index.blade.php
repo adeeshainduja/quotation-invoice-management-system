@@ -28,7 +28,7 @@
 
     <nav>
 
-        <a href="{{ route('dashboard') }}">
+        <a href="{{ route('dashboard', ['company_id' => $companyId]) }}">
             <i data-lucide="house"></i>
             Dashboard
         </a>
@@ -38,7 +38,7 @@
             Companies
         </a>
 
-        <a href="{{ route('customers.index') }}">
+        <a href="{{ route('customers.index', ['company_id' => $companyId]) }}">
             <i data-lucide="users"></i>
             Customers
         </a>
@@ -147,7 +147,10 @@
                 <p>Create and manage your quotations</p>
             </div>
 
-            <a href="#" class="new-quotation">
+            <a
+                href="{{ route('quotations.create') }}"
+                class="new-quotation"
+            >
                 <i data-lucide="plus"></i>
                 New Quotation
             </a>

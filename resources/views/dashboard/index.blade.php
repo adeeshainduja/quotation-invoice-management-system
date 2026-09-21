@@ -33,17 +33,17 @@
             Dashboard
         </a>
 
-        <a href="#">
+        <a href="{{ route('companies.index') }}">
             <i data-lucide="building-2"></i>
             Companies
         </a>
 
-        <a href="#">
+        <a href="{{ route('customers.index', ['company_id' => $companyId]) }}">
             <i data-lucide="users"></i>
             Customers
         </a>
 
-        <a href="#">
+        <a href="{{ route('quotations.index', ['company_id' => $companyId]) }}">
             <i data-lucide="file-text"></i>
             Quotations
         </a>

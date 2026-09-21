@@ -27,7 +27,7 @@
 
     <nav>
 
-        <a href="{{ route('dashboard') }}">
+        <a href="{{ route('dashboard', ['company_id' => $companyId]) }}">
             <i data-lucide="house"></i>
             Dashboard
         </a>
@@ -42,7 +42,7 @@
             Customers
         </a>
 
-        <a href="#">
+        <a href="{{ route('quotations.index', ['company_id' => $companyId]) }}">
             <i data-lucide="file-text"></i>
             Quotations
         </a>
@@ -170,19 +170,16 @@
             </div>
         @endif
 
+        @if($companyList->isEmpty())
+            <div class="form-errors">No active company exists. <a href="{{ route('companies.create') }}">Add Company</a></div>
+        @endif
+
 
         <form
             method="POST"
             action="{{ route('customers.store') }}"
         >
             @csrf
-
-            <input
-                type="hidden"
-                name="company_id"
-                value="{{ $companyId }}"
-            >
-
 
             <div class="form-grid">
 
@@ -194,6 +191,14 @@
                         <i data-lucide="user"></i>
                         Basic Information
                     </h2>
+
+                    <label>Company <span>*</span></label>
+                    <select name="company_id" required>
+                        <option value="">Select Company</option>
+                        @foreach($companyList as $company)
+                            <option value="{{ $company->id }}" {{ old('company_id', $companyId) == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
+                        @endforeach
+                    </select>
 
 
                     <label>

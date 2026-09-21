@@ -60,10 +60,11 @@ class CustomerController extends Controller
     }
 
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $customer = DB::table('customers')
             ->where('id', $id)
+            ->when($request->integer('company_id'), fn ($query, $companyId) => $query->where('company_id', $companyId))
             ->first();
 
         abort_if(!$customer, 404);
@@ -108,8 +109,7 @@ class CustomerController extends Controller
         ->orderBy('name')
         ->get(['id', 'name']);
 
-    $companyId = $request->integer('company_id')
-        ?: optional($companyList->first())->id;
+    $companyId = $request->integer('company_id') ?: optional($companyList->first())->id;
 
     return view('customers.create', compact(
         'companyList',
@@ -142,7 +142,7 @@ class CustomerController extends Controller
         ]);
 
         return redirect()
-            ->route('customers.show', $id)
+            ->route('customers.show', ['id' => $id, 'company_id' => $data['company_id']])
             ->with('success', 'Customer created successfully.');
     }
 }

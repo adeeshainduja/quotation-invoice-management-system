@@ -28,7 +28,7 @@
 
     <nav>
 
-        <a href="{{ route('dashboard') }}">
+        <a href="{{ route('dashboard', ['company_id' => $companyId]) }}">
             <i data-lucide="house"></i>
             Dashboard
         </a>
@@ -38,7 +38,7 @@
             Companies
         </a>
 
-        <a href="{{ route('customers.index') }}">
+        <a href="{{ route('customers.index', ['company_id' => $companyId]) }}">
             <i data-lucide="users"></i>
             Customers
         </a>
@@ -89,6 +89,8 @@
                 class="company-select"
                 onchange="this.form.submit()"
             >
+
+                <option value="">Select Company</option>
 
                 @foreach($companyList as $item)
 
@@ -168,6 +170,12 @@
             <div class="form-errors">
                 {{ $errors->first() }}
             </div>
+        @endif
+
+        @if($companyList->isEmpty())
+            <div class="form-errors">No active company exists. <a href="{{ route('companies.create') }}">Add Company</a></div>
+        @elseif(! $company)
+            <div class="form-errors">Select an active company before creating a quotation.</div>
         @endif
 
 
@@ -316,7 +324,7 @@
 
                             <input
                                 type="text"
-                                value="{{ $company->currency }}"
+                                value="{{ $company->currency ?? 'LKR' }}"
                                 readonly
                             >
                         </div>
@@ -463,7 +471,7 @@
                                 <input
                                     type="number"
                                     name="items[0][tax]"
-                                    value="{{ $company->vat_registered ? ($company->vat_percentage ?? 0) : 0 }}"
+                                    value="{{ $company && $company->vat_registered ? ($company->vat_percentage ?? 0) : 0 }}"
                                     min="0"
                                     max="100"
                                     step="0.01"
@@ -549,7 +557,7 @@
                     <div class="summary-row">
                         <span>Subtotal</span>
                         <strong>
-                            {{ $company->currency }}
+                            {{ $company->currency ?? 'LKR' }}
                             <span id="subtotal">0.00</span>
                         </strong>
                     </div>
@@ -558,7 +566,7 @@
                     <div class="summary-row">
                         <span>Discount</span>
                         <strong>
-                            {{ $company->currency }}
+                            {{ $company->currency ?? 'LKR' }}
                             <span id="discountTotal">0.00</span>
                         </strong>
                     </div>
@@ -567,7 +575,7 @@
                     <div class="summary-row">
                         <span>Tax</span>
                         <strong>
-                            {{ $company->currency }}
+                            {{ $company->currency ?? 'LKR' }}
                             <span id="taxTotal">0.00</span>
                         </strong>
                     </div>
@@ -578,7 +586,7 @@
                         <span>Total Amount</span>
 
                         <strong>
-                            {{ $company->currency }}
+                            {{ $company->currency ?? 'LKR' }}
                             <span id="grandTotal">0.00</span>
                         </strong>
 
@@ -600,7 +608,7 @@
                 </a>
 
 
-                <button type="submit" class="save-btn">
+                <button type="submit" class="save-btn" @disabled(! $company)>
 
                     <i data-lucide="save"></i>
                     Save Quotation
@@ -621,7 +629,7 @@
 let itemIndex = 1;
 
 const defaultTax =
-    {{ $company->vat_registered ? ($company->vat_percentage ?? 0) : 0 }};
+    {{ $company && $company->vat_registered ? ($company->vat_percentage ?? 0) : 0 }};
 
 
 function addItem()

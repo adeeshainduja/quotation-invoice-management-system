@@ -28,8 +28,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
+
     Route::get('/companies', [CompanyController::class, 'index'])
         ->name('companies.index');
+
+    Route::get('/companies/create', [CompanyController::class, 'create'])
+        ->name('companies.create');
+
+    Route::post('/companies', [CompanyController::class, 'store'])
+        ->name('companies.store');
 
 
     Route::get('/customers', [CustomerController::class, 'index'])
@@ -57,5 +64,4 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout'])
         ->name('logout');
-
 });

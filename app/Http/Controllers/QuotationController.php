@@ -75,31 +75,34 @@ class QuotationController extends Controller
         ->orderBy('name')
         ->get(['id', 'name']);
 
-    $companyId = $request->integer('company_id')
-        ?: optional($companyList->first())->id;
+    $companyId = $request->integer('company_id') ?: optional($companyList->first())->id;
+    $company = null;
+    $customers = collect();
+    $templates = collect();
+    $quotationNumber = '';
 
-    $company = DB::table('companies')
-        ->where('id', $companyId)
-        ->first();
+    if ($companyId) {
+        $company = DB::table('companies')
+            ->where('id', $companyId)
+            ->where('status', 'ACTIVE')
+            ->first();
 
-    abort_if(!$company, 404);
+        if ($company) {
+            $customers = DB::table('customers')
+                ->where('company_id', $companyId)
+                ->where('status', 'ACTIVE')
+                ->orderBy('business_name')
+                ->get();
 
-    $customers = DB::table('customers')
-        ->where('company_id', $companyId)
-        ->where('status', 'ACTIVE')
-        ->orderBy('business_name')
-        ->get();
+            $templates = DB::table('company_templates')
+                ->where('company_id', $companyId)
+                ->where('document_type', 'QUOTATION')
+                ->orderByDesc('is_default')
+                ->get();
 
-    $templates = DB::table('company_templates')
-        ->where('company_id', $companyId)
-        ->where('document_type', 'QUOTATION')
-        ->orderByDesc('is_default')
-        ->get();
-
-    $quotationNumber =
-        rtrim($company->quotation_prefix, '-') . '-' .
-        now()->format('Y') . '-' .
-        str_pad($company->quotation_next_number, 4, '0', STR_PAD_LEFT);
+            $quotationNumber = rtrim($company->quotation_prefix, '-') . '-' . now()->format('Y') . '-' . str_pad($company->quotation_next_number, 4, '0', STR_PAD_LEFT);
+        }
+    }
 
     return view('quotations.create', compact(
         'companyList',

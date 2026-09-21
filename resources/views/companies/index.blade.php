@@ -38,12 +38,12 @@
             Companies
         </a>
 
-        <a href="#">
+        <a href="{{ route('customers.index') }}">
             <i data-lucide="users"></i>
             Customers
         </a>
 
-        <a href="#">
+        <a href="{{ route('quotations.index') }}">
             <i data-lucide="file-text"></i>
             Quotations
         </a>
@@ -145,7 +145,7 @@
                 <p>Manage your companies and business information</p>
             </div>
 
-            <a href="#" class="add-company">
+            <a href="{{ route('companies.create') }}" class="add-company">
                 <i data-lucide="plus"></i>
                 Add Company
             </a>
@@ -319,7 +319,7 @@
 
 
                             <td>
-                                {{ $company->tin_number ?: '-' }}
+                                {{ $company->tin ?: '-' }}
                             </td>
 
 
