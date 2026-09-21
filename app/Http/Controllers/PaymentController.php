@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class PaymentController extends Controller
 {
@@ -18,6 +17,203 @@ class PaymentController extends Controller
         $companyId = $request->integer('company_id')
             ?: optional($companyList->first())->id;
 
+        $currency = $companyId
+            ? DB::table('companies')
+                ->where('id', $companyId)
+                ->value('currency') ?? 'LKR'
+            : 'LKR';
+
+        $stats = [
+            'outstanding_amount' => 0,
+            'outstanding_count' => 0,
+
+            'total_received' => 0,
+            'payment_count' => 0,
+
+            'completed_count' => 0,
+            'completed_amount' => 0,
+
+            'overdue_count' => 0,
+            'overdue_amount' => 0,
+
+            'pending_count' => 0,
+            'pending_amount' => 0,
+
+            'month_received' => 0,
+            'month_count' => 0,
+        ];
+
+        if ($companyId) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Outstanding
+            |--------------------------------------------------------------------------
+            */
+
+            $outstanding = DB::table('invoices')
+                ->where('company_id', $companyId)
+                ->where('balance_amount', '>', 0)
+                ->whereNotIn('status', [
+                    'DRAFT',
+                    'CANCELLED'
+                ]);
+
+            $stats['outstanding_amount'] =
+                (clone $outstanding)
+                    ->sum('balance_amount');
+
+            $stats['outstanding_count'] =
+                (clone $outstanding)
+                    ->count();
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Total Payments Received
+            |--------------------------------------------------------------------------
+            */
+
+            $received = DB::table('payments')
+                ->join(
+                    'invoices',
+                    'payments.invoice_id',
+                    '=',
+                    'invoices.id'
+                )
+                ->where(
+                    'invoices.company_id',
+                    $companyId
+                );
+
+            $stats['total_received'] =
+                (clone $received)
+                    ->sum('payments.amount');
+
+            $stats['payment_count'] =
+                (clone $received)
+                    ->count();
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Completed
+            |--------------------------------------------------------------------------
+            */
+
+            $completed = DB::table('invoices')
+                ->where('company_id', $companyId)
+                ->where('status', 'PAID');
+
+            $stats['completed_count'] =
+                (clone $completed)
+                    ->count();
+
+            $stats['completed_amount'] =
+                (clone $completed)
+                    ->sum('grand_total');
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Overdue
+            |--------------------------------------------------------------------------
+            */
+
+            $overdue = DB::table('invoices')
+                ->where('company_id', $companyId)
+                ->whereDate('due_date', '<', today())
+                ->where('balance_amount', '>', 0)
+                ->whereNotIn('status', [
+                    'DRAFT',
+                    'PAID',
+                    'CANCELLED'
+                ]);
+
+            $stats['overdue_count'] =
+                (clone $overdue)
+                    ->count();
+
+            $stats['overdue_amount'] =
+                (clone $overdue)
+                    ->sum('balance_amount');
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Pending
+            |--------------------------------------------------------------------------
+            */
+
+            $pending = DB::table('invoices')
+                ->where('company_id', $companyId)
+                ->where('balance_amount', '>', 0)
+                ->where(function ($q) {
+                    $q->whereNull('due_date')
+                        ->orWhereDate(
+                            'due_date',
+                            '>=',
+                            today()
+                        );
+                })
+                ->whereNotIn('status', [
+                    'DRAFT',
+                    'PAID',
+                    'CANCELLED'
+                ]);
+
+            $stats['pending_count'] =
+                (clone $pending)
+                    ->count();
+
+            $stats['pending_amount'] =
+                (clone $pending)
+                    ->sum('balance_amount');
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Received This Month
+            |--------------------------------------------------------------------------
+            */
+
+            $monthStart =
+                now()->startOfMonth()->toDateString();
+
+            $monthEnd =
+                now()->endOfMonth()->toDateString();
+
+            $monthPayments = DB::table('payments')
+                ->join(
+                    'invoices',
+                    'payments.invoice_id',
+                    '=',
+                    'invoices.id'
+                )
+                ->where(
+                    'invoices.company_id',
+                    $companyId
+                )
+                ->whereBetween(
+                    'payments.payment_date',
+                    [$monthStart, $monthEnd]
+                );
+
+            $stats['month_received'] =
+                (clone $monthPayments)
+                    ->sum('payments.amount');
+
+            $stats['month_count'] =
+                (clone $monthPayments)
+                    ->count();
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Payment History
+        |--------------------------------------------------------------------------
+        */
 
         $payments = DB::table('payments')
             ->join(
@@ -32,25 +228,27 @@ class PaymentController extends Controller
                 '=',
                 'customers.id'
             )
-            ->when(
-                $companyId,
-                function ($query) use ($companyId) {
-                    $query->where(
-                        'invoices.company_id',
-                        $companyId
-                    );
-                },
-                function ($query) {
-                    $query->whereRaw('1 = 0');
-                }
+            ->leftJoin(
+                'users',
+                'payments.created_by',
+                '=',
+                'users.id'
             )
             ->when(
-                $request->filled('search'),
-                function ($query) use ($request) {
+                $companyId,
+                fn ($q) =>
+                    $q->where(
+                        'invoices.company_id',
+                        $companyId
+                    ),
+                fn ($q) =>
+                    $q->whereRaw('1 = 0')
+            )
+            ->when(
+                $request->search,
+                function ($q, $search) {
 
-                    $search = trim($request->search);
-
-                    $query->where(function ($query) use ($search) {
+                    $q->where(function ($query) use ($search) {
 
                         $query
                             ->where(
@@ -68,19 +266,42 @@ class PaymentController extends Controller
                                 'like',
                                 "%{$search}%"
                             );
-
                     });
                 }
             )
             ->when(
-                $request->filled('payment_method'),
-                function ($query) use ($request) {
-
-                    $query->where(
+                $request->payment_method,
+                fn ($q, $method) =>
+                    $q->where(
                         'payments.payment_method',
-                        $request->payment_method
-                    );
-                }
+                        $method
+                    )
+            )
+            ->when(
+                $request->status,
+                fn ($q, $status) =>
+                    $q->where(
+                        'invoices.status',
+                        $status
+                    )
+            )
+            ->when(
+                $request->from_date,
+                fn ($q, $date) =>
+                    $q->whereDate(
+                        'payments.payment_date',
+                        '>=',
+                        $date
+                    )
+            )
+            ->when(
+                $request->to_date,
+                fn ($q, $date) =>
+                    $q->whereDate(
+                        'payments.payment_date',
+                        '<=',
+                        $date
+                    )
             )
             ->select(
                 'payments.id',
@@ -90,415 +311,32 @@ class PaymentController extends Controller
                 'payments.payment_method',
                 'payments.reference',
                 'payments.notes',
-                'payments.created_at',
 
                 'invoices.invoice_number',
+                'invoices.invoice_date',
+                'invoices.due_date',
                 'invoices.grand_total',
                 'invoices.amount_paid',
                 'invoices.balance_amount',
+                'invoices.status',
 
-                'customers.business_name'
+                'customers.business_name',
+                'customers.customer_name',
+
+                'users.name as recorded_by'
             )
             ->orderByDesc('payments.payment_date')
             ->orderByDesc('payments.id')
-            ->paginate(10)
+            ->paginate(15)
             ->withQueryString();
 
 
         return view('payments.index', compact(
             'companyList',
             'companyId',
+            'currency',
+            'stats',
             'payments'
         ));
-    }
-
-
-    public function create(Request $request)
-    {
-        $companyList = DB::table('companies')
-            ->where('status', 'ACTIVE')
-            ->orderBy('name')
-            ->get(['id', 'name']);
-
-
-        $companyId = $request->integer('company_id')
-            ?: optional($companyList->first())->id;
-
-
-        $company = null;
-
-        $invoices = collect();
-
-        $selectedInvoiceId =
-            $request->integer('invoice_id') ?: null;
-
-
-        if ($companyId) {
-
-            $company = DB::table('companies')
-                ->where('id', $companyId)
-                ->where('status', 'ACTIVE')
-                ->first();
-
-
-            if ($company) {
-
-                $invoices = DB::table('invoices')
-                    ->join(
-                        'customers',
-                        'invoices.customer_id',
-                        '=',
-                        'customers.id'
-                    )
-                    ->where(
-                        'invoices.company_id',
-                        $companyId
-                    )
-                    ->where(
-                        'invoices.status',
-                        '!=',
-                        'CANCELLED'
-                    )
-                    ->where(
-                        'invoices.balance_amount',
-                        '>',
-                        0
-                    )
-                    ->select(
-                        'invoices.id',
-                        'invoices.invoice_number',
-                        'invoices.invoice_date',
-                        'invoices.grand_total',
-                        'invoices.amount_paid',
-                        'invoices.balance_amount',
-                        'invoices.status',
-
-                        'customers.business_name'
-                    )
-                    ->orderByDesc(
-                        'invoices.invoice_date'
-                    )
-                    ->get();
-            }
-        }
-
-
-        return view('payments.create', compact(
-            'companyList',
-            'companyId',
-            'company',
-            'invoices',
-            'selectedInvoiceId'
-        ));
-    }
-
-
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-
-            'company_id' =>
-                'required|exists:companies,id',
-
-            'invoice_id' =>
-                'required|exists:invoices,id',
-
-            'payment_date' =>
-                'required|date',
-
-            'amount' =>
-                'required|numeric|gt:0',
-
-            'payment_method' =>
-                'required|in:CASH,BANK_TRANSFER,CARD,CHEQUE,OTHER',
-
-            'reference' =>
-                'nullable|string|max:255',
-
-            'notes' =>
-                'nullable|string',
-        ]);
-
-
-        return DB::transaction(function () use ($data) {
-
-            /*
-             * Lock invoice so two payments cannot
-             * incorrectly update the same balance
-             * simultaneously.
-             */
-            $invoice = DB::table('invoices')
-                ->where('id', $data['invoice_id'])
-                ->where(
-                    'company_id',
-                    $data['company_id']
-                )
-                ->lockForUpdate()
-                ->first();
-
-
-            if (!$invoice) {
-
-                throw ValidationException::withMessages([
-                    'invoice_id' =>
-                        'Selected invoice is invalid.'
-                ]);
-            }
-
-
-            if ($invoice->status === 'CANCELLED') {
-
-                throw ValidationException::withMessages([
-                    'invoice_id' =>
-                        'Payments cannot be recorded against a cancelled invoice.'
-                ]);
-            }
-
-
-            $paymentCents =
-                $this->decimalToCents(
-                    $data['amount']
-                );
-
-
-            $balanceCents =
-                $this->decimalToCents(
-                    $invoice->balance_amount
-                );
-
-
-            if ($paymentCents <= 0) {
-
-                throw ValidationException::withMessages([
-                    'amount' =>
-                        'Payment amount must be greater than zero.'
-                ]);
-            }
-
-
-            if ($paymentCents > $balanceCents) {
-
-                throw ValidationException::withMessages([
-                    'amount' =>
-                        'Payment amount cannot exceed the outstanding invoice balance.'
-                ]);
-            }
-
-
-            DB::table('payments')->insert([
-
-                'invoice_id' =>
-                    $invoice->id,
-
-                'payment_date' =>
-                    $data['payment_date'],
-
-                'amount' =>
-                    $this->centsToDecimal(
-                        $paymentCents
-                    ),
-
-                'payment_method' =>
-                    $data['payment_method'],
-
-                'reference' =>
-                    $data['reference'] ?? null,
-
-                'notes' =>
-                    $data['notes'] ?? null,
-
-                'created_by' =>
-                    auth()->id(),
-
-                'created_at' =>
-                    now(),
-
-                'updated_at' =>
-                    now(),
-            ]);
-
-
-            /*
-             * Recalculate payment total from DB.
-             * Do not trust a browser-calculated total.
-             */
-            $totalPaid = DB::table('payments')
-                ->where(
-                    'invoice_id',
-                    $invoice->id
-                )
-                ->selectRaw(
-                    'COALESCE(SUM(amount), 0) AS total_paid'
-                )
-                ->value('total_paid');
-
-
-            $totalPaidCents =
-                $this->decimalToCents(
-                    $totalPaid
-                );
-
-
-            $grandTotalCents =
-                $this->decimalToCents(
-                    $invoice->grand_total
-                );
-
-
-            $newBalanceCents =
-                max(
-                    0,
-                    $grandTotalCents
-                    - $totalPaidCents
-                );
-
-
-            if ($newBalanceCents === 0) {
-
-                $newStatus = 'PAID';
-
-            } elseif ($totalPaidCents > 0) {
-
-                $newStatus = 'PARTIALLY_PAID';
-
-            } else {
-
-                $newStatus = $invoice->status;
-            }
-
-
-            DB::table('invoices')
-                ->where('id', $invoice->id)
-                ->update([
-
-                    'amount_paid' =>
-                        $this->centsToDecimal(
-                            $totalPaidCents
-                        ),
-
-                    'balance_amount' =>
-                        $this->centsToDecimal(
-                            $newBalanceCents
-                        ),
-
-                    'status' =>
-                        $newStatus,
-
-                    'updated_at' =>
-                        now(),
-                ]);
-
-
-            return redirect()
-                ->route(
-                    'payments.index',
-                    [
-                        'company_id' =>
-                            $invoice->company_id
-                    ]
-                )
-                ->with(
-                    'success',
-                    'Payment recorded successfully.'
-                );
-        });
-    }
-
-
-    private function decimalToCents(
-        mixed $value
-    ): int
-    {
-        $value =
-            trim((string) $value);
-
-
-        $negative =
-            str_starts_with(
-                $value,
-                '-'
-            );
-
-
-        if ($negative) {
-
-            $value =
-                substr($value, 1);
-        }
-
-
-        [$whole, $fraction] =
-            array_pad(
-                explode(
-                    '.',
-                    $value,
-                    2
-                ),
-                2,
-                ''
-            );
-
-
-        $whole =
-            preg_replace(
-                '/[^0-9]/',
-                '',
-                $whole
-            );
-
-
-        $fraction =
-            preg_replace(
-                '/[^0-9]/',
-                '',
-                $fraction
-            );
-
-
-        $fraction =
-            substr(
-                str_pad(
-                    $fraction,
-                    2,
-                    '0'
-                ),
-                0,
-                2
-            );
-
-
-        $cents =
-            ((int) ($whole ?: 0) * 100)
-            + (int) ($fraction ?: 0);
-
-
-        return $negative
-            ? -$cents
-            : $cents;
-    }
-
-
-    private function centsToDecimal(
-        int $cents
-    ): string
-    {
-        $negative =
-            $cents < 0;
-
-
-        $cents =
-            abs($cents);
-
-
-        return
-            ($negative ? '-' : '')
-            . intdiv($cents, 100)
-            . '.'
-            . str_pad(
-                (string) ($cents % 100),
-                2,
-                '0',
-                STR_PAD_LEFT
-            );
     }
 }
