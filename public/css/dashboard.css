@@ -499,3 +499,71 @@ td {
 .sidebar nav a.disabled:hover {
     background: transparent;
 }
+
+.logout-form {
+    margin: 0;
+}
+
+.sidebar-logout {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 12px 14px;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: transparent;
+    color: #fff;
+
+    font: inherit;
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.sidebar-logout:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-logout svg {
+    width: 20px;
+    height: 20px;
+}
+
+.logout-form {
+    margin: 0;
+    width: 100%;
+}
+
+.sidebar-logout {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 12px 14px;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: transparent;
+    color: inherit;
+
+    font-family: inherit;
+    font-size: inherit;
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.sidebar-logout:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-logout svg {
+    width: 20px;
+    height: 20px;
+}

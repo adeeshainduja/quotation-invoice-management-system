@@ -143,7 +143,6 @@
 
             <div class="nav-line"></div>
 
-
             <a
                 href="{{ route('users.index') }}"
                 class="{{ request()->routeIs('users.*') ? 'active' : '' }}"
@@ -170,6 +169,28 @@
             </a>
 
         @endif
+
+
+        {{-- LOGOUT --}}
+        <div class="nav-line"></div>
+
+        <form
+            method="POST"
+            action="{{ route('logout') }}"
+            class="logout-form"
+        >
+
+            @csrf
+
+            <button
+                type="submit"
+                class="sidebar-logout"
+            >
+                <i data-lucide="log-out"></i>
+                Logout
+            </button>
+
+        </form>
 
     </nav>
 

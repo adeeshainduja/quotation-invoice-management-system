@@ -17,6 +17,19 @@ use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
+| Root
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+});
+
+
+/*
+|--------------------------------------------------------------------------
 | Guest Routes
 |--------------------------------------------------------------------------
 */
@@ -94,6 +107,7 @@ Route::middleware('auth')->group(function () {
         ->name('customers.store');
 
     Route::get('/customers/{id}', [CustomerController::class, 'show'])
+        ->whereNumber('id')
         ->middleware('permission:customers.view')
         ->name('customers.show');
 
@@ -121,10 +135,12 @@ Route::middleware('auth')->group(function () {
         ->name('quotations.store');
 
     Route::get('/quotations/{id}/pdf', [QuotationController::class, 'downloadPdf'])
+        ->whereNumber('id')
         ->middleware('permission:quotations.pdf')
         ->name('quotations.pdf');
 
     Route::get('/quotations/{id}', [QuotationController::class, 'show'])
+        ->whereNumber('id')
         ->middleware('permission:quotations.view')
         ->name('quotations.show');
 
@@ -152,6 +168,7 @@ Route::middleware('auth')->group(function () {
         ->name('invoices.store');
 
     Route::get('/invoices/{id}/pdf', [InvoiceController::class, 'downloadPdf'])
+        ->whereNumber('id')
         ->middleware('permission:invoices.pdf')
         ->name('invoices.pdf');
 
@@ -186,6 +203,7 @@ Route::middleware('auth')->group(function () {
         ->name('templates.store');
 
     Route::get('/templates/{id}', [TemplateController::class, 'show'])
+        ->whereNumber('id')
         ->middleware('permission:templates.view')
         ->name('templates.show');
 
@@ -196,14 +214,14 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::middleware('permission:activity_logs.view')->group(function () {
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])
+        ->middleware('permission:activity_logs.view')
+        ->name('activity-logs.index');
 
-        Route::get('/activity-logs', [ActivityLogController::class, 'index'])
-            ->name('activity-logs.index');
-
-        Route::get('/activity-logs/{id}', [ActivityLogController::class, 'show'])
-            ->name('activity-logs.show');
-    });
+    Route::get('/activity-logs/{id}', [ActivityLogController::class, 'show'])
+        ->whereNumber('id')
+        ->middleware('permission:activity_logs.view')
+        ->name('activity-logs.show');
 
 
     /*
@@ -243,9 +261,11 @@ Route::middleware('auth')->group(function () {
             ->name('users.store');
 
         Route::get('/users/{id}/edit', [UserController::class, 'edit'])
+            ->whereNumber('id')
             ->name('users.edit');
 
         Route::put('/users/{id}', [UserController::class, 'update'])
+            ->whereNumber('id')
             ->name('users.update');
     });
 
