@@ -1,0 +1,249 @@
+.breadcrumb {
+    display: flex;
+    gap: 11px;
+    margin-bottom: 14px;
+    color: #61718d;
+    font-size: 14px;
+}
+
+.breadcrumb a {
+    color: #42618b;
+    text-decoration: none;
+}
+
+.quotation-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.quotation-heading h1 {
+    margin: 0;
+    font-size: 30px;
+}
+
+.quotation-heading p {
+    margin: 7px 0 0;
+    color: #63728d;
+}
+
+.new-quotation {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 14px 22px;
+    border-radius: 7px;
+    background: #1474e8;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.new-quotation svg {
+    width: 20px;
+}
+
+.quotation-filter {
+    display: grid;
+    grid-template-columns: 1.4fr .75fr 1fr 1.3fr auto auto;
+    gap: 13px;
+    padding: 17px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px 9px 0 0;
+}
+
+.search-box,
+.date-filter {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    border: 1px solid #d3ddea;
+    border-radius: 7px;
+    background: white;
+}
+
+.search-box {
+    padding: 0 13px;
+}
+
+.search-box svg {
+    width: 19px;
+    color: #61718d;
+}
+
+.search-box input {
+    flex: 1;
+    margin-left: 10px;
+    border: 0;
+    outline: none;
+    font: inherit;
+}
+
+.quotation-filter select {
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid #d3ddea;
+    border-radius: 7px;
+    background: white;
+    color: #10264c;
+}
+
+.date-filter input {
+    width: 50%;
+    border: 0;
+    outline: none;
+    padding: 0 10px;
+    color: #50617d;
+}
+
+.date-filter span {
+    color: #78869a;
+}
+
+.filter-button,
+.clear-button {
+    height: 44px;
+    padding: 0 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.filter-button {
+    border: 0;
+    background: #1474e8;
+    color: white;
+    cursor: pointer;
+}
+
+.clear-button {
+    background: #eef3f8;
+    color: #42536e;
+}
+
+.quotation-table {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-top: 0;
+    border-radius: 0 0 9px 9px;
+}
+
+.quotation-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.quotation-table th {
+    padding: 13px;
+    text-align: left;
+    background: #f0f4f8;
+}
+
+.quotation-table td {
+    padding: 11px 13px;
+    border-bottom: 1px solid #e5ebf2;
+}
+
+.quotation-status {
+    display: inline-block;
+    min-width: 75px;
+    padding: 5px 10px;
+    text-align: center;
+    border-radius: 18px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.quotation-status.sent {
+    color: #116bdc;
+    background: #dcecff;
+}
+
+.quotation-status.draft {
+    color: #42536e;
+    background: #e5ebf2;
+}
+
+.quotation-status.accepted {
+    color: #10834e;
+    background: #d8f5e4;
+}
+
+.quotation-status.rejected,
+.quotation-status.expired {
+    color: #dc323b;
+    background: #ffe1e3;
+}
+
+.quotation-status.converted {
+    color: #7c36d5;
+    background: #eee2ff;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.actions a,
+.actions button {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 12px;
+    border: 1px solid #d9e2ed;
+    border-radius: 6px;
+    background: white;
+    color: #0866d5;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.actions button {
+    width: 43px;
+    justify-content: center;
+}
+
+.actions svg {
+    width: 17px;
+}
+
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    color: #61718d;
+    font-size: 13px;
+}
+
+.empty {
+    padding: 35px !important;
+    text-align: center;
+    color: #7c899d;
+}
+
+@media (max-width: 1200px) {
+    .quotation-filter {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .quotation-filter {
+        grid-template-columns: 1fr;
+    }
+
+    .quotation-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 15px;
+    }
+}

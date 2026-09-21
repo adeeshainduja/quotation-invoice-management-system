@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\QuotationController;
 
 Route::middleware('guest')->group(function () {
 
@@ -42,6 +43,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/customers/{id}', [CustomerController::class, 'show'])
         ->name('customers.show');
+
+    Route::get('/quotations', [QuotationController::class, 'index'])
+    ->name('quotations.index');
 
 
     Route::post('/logout', [AuthController::class, 'logout'])
