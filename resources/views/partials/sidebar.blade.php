@@ -1,5 +1,5 @@
 @php
-    $companyParam = request()->filled('company_id')
+    $companyParam = request('company_id')
         ? ['company_id' => request('company_id')]
         : [];
 @endphp
@@ -41,74 +41,36 @@
             Quotations
         </a>
 
+        <a href="{{ route('invoices.index', $companyParam) }}"
+           class="{{ request()->routeIs('invoices.*') ? 'active' : '' }}">
+            <i data-lucide="receipt-text"></i>
+            Invoices
+        </a>
 
-        @if(Route::has('invoices.index'))
-            <a href="{{ route('invoices.index', $companyParam) }}"
-               class="{{ request()->routeIs('invoices.*') ? 'active' : '' }}">
-                <i data-lucide="receipt-text"></i>
-                Invoices
-            </a>
-        @else
-            <a href="javascript:void(0)" class="disabled">
-                <i data-lucide="receipt-text"></i>
-                Invoices
-            </a>
-        @endif
+        <a href="{{ route('payments.index', $companyParam) }}"
+           class="{{ request()->routeIs('payments.*') ? 'active' : '' }}">
+            <i data-lucide="credit-card"></i>
+            Payments
+        </a>
 
+        <a href="{{ route('templates.index', $companyParam) }}"
+           class="{{ request()->routeIs('templates.*') ? 'active' : '' }}">
+            <i data-lucide="notebook-tabs"></i>
+            Templates
+        </a>
 
-        @if(Route::has('payments.index'))
-            <a href="{{ route('payments.index', $companyParam) }}"
-               class="{{ request()->routeIs('payments.*') ? 'active' : '' }}">
-                <i data-lucide="credit-card"></i>
-                Payments
-            </a>
-        @else
-            <a href="javascript:void(0)" class="disabled">
-                <i data-lucide="credit-card"></i>
-                Payments
-            </a>
-        @endif
-
-
-        @if(Route::has('templates.index'))
-            <a href="{{ route('templates.index', $companyParam) }}"
-               class="{{ request()->routeIs('templates.*') ? 'active' : '' }}">
-                <i data-lucide="notebook-tabs"></i>
-                Templates
-            </a>
-        @else
-            <a href="javascript:void(0)" class="disabled">
-                <i data-lucide="notebook-tabs"></i>
-                Templates
-            </a>
-        @endif
-
-
-        @if(Route::has('activity-logs.index'))
+        @can('viewActivityLogs')
             <a href="{{ route('activity-logs.index') }}"
                class="{{ request()->routeIs('activity-logs.*') ? 'active' : '' }}">
                 <i data-lucide="history"></i>
                 Activity Logs
             </a>
-        @else
-            <a href="javascript:void(0)" class="disabled">
-                <i data-lucide="history"></i>
-                Activity Logs
-            </a>
-        @endif
-
+        @endcan
 
         <div class="nav-line"></div>
 
-
         @if(Route::has('settings.index'))
-            <a href="{{ route('settings.index') }}"
-               class="{{ request()->routeIs('settings.*') ? 'active' : '' }}">
-                <i data-lucide="settings"></i>
-                Settings
-            </a>
-        @else
-            <a href="javascript:void(0)" class="disabled">
+            <a href="{{ route('settings.index') }}">
                 <i data-lucide="settings"></i>
                 Settings
             </a>
