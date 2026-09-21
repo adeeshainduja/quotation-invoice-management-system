@@ -8,6 +8,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\TemplateController;
 
 Route::middleware('guest')->group(function () {
 
@@ -85,6 +86,16 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/payments', [PaymentController::class, 'store'])
         ->name('payments.store');
+
+    
+    Route::get('/templates', [TemplateController::class, 'index'])
+    ->name('templates.index');
+
+    Route::get('/templates/create', [TemplateController::class, 'create'])
+        ->name('templates.create');
+
+    Route::post('/templates', [TemplateController::class, 'store'])
+        ->name('templates.store');
 
 
     Route::post('/logout', [AuthController::class, 'logout'])
