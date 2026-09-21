@@ -17,42 +17,53 @@
 
 @include('partials.sidebar')
 
+
 <div class="page">
 
+    {{-- TOP BAR --}}
     <header class="topbar">
 
-        <form method="GET" action="{{ route('invoices.index') }}">
-
-            <select
-                name="company_id"
-                class="company-select"
-                onchange="this.form.submit()"
-            >
-
-                <option value="">Select Company</option>
-
-                @foreach($companyList as $company)
-
-                    <option
-                        value="{{ $company->id }}"
-                        {{ $companyId == $company->id ? 'selected' : '' }}
-                    >
-                        {{ $company->name }}
-                    </option>
-
-                @endforeach
-
-            </select>
-
-        </form>
+        <button class="menu" type="button">
+            <i data-lucide="menu"></i>
+        </button>
 
 
         <div class="topbar-right">
+
+            <form method="GET" action="{{ route('invoices.index') }}">
+
+                <select
+                    name="company_id"
+                    class="company-select"
+                    onchange="this.form.submit()"
+                >
+
+                    <option value="">
+                        Select Company
+                    </option>
+
+
+                    @foreach($companyList as $company)
+
+                        <option
+                            value="{{ $company->id }}"
+                            {{ $companyId == $company->id ? 'selected' : '' }}
+                        >
+                            {{ $company->name }}
+                        </option>
+
+                    @endforeach
+
+                </select>
+
+            </form>
+
 
             <div class="notification">
                 <i data-lucide="bell"></i>
                 <span></span>
             </div>
+
 
             <div class="user">
 
@@ -74,6 +85,7 @@
 
     <main>
 
+        {{-- BREADCRUMB --}}
         <div class="breadcrumb">
 
             <a href="{{ route('dashboard') }}">
@@ -87,30 +99,37 @@
         </div>
 
 
+        {{-- PAGE HEADING --}}
         <div class="invoice-heading">
 
             <div>
+
                 <h1>Invoices</h1>
-                <p>Create and manage customer invoices</p>
+
+                <p>
+                    Create and manage customer invoices
+                </p>
+
             </div>
 
-            @if(Route::has('invoices.create'))
 
-                <a
-                    href="{{ $companyId
-                        ? route('invoices.create', ['company_id' => $companyId])
-                        : route('invoices.create') }}"
-                    class="new-invoice"
-                >
-                    <i data-lucide="plus"></i>
-                    New Invoice
-                </a>
+            <a
+                href="{{ $companyId
+                    ? route('invoices.create', ['company_id' => $companyId])
+                    : route('invoices.create') }}"
+                class="new-invoice"
+            >
 
-            @endif
+                <i data-lucide="plus"></i>
+
+                New Invoice
+
+            </a>
 
         </div>
 
 
+        {{-- SUCCESS MESSAGE --}}
         @if(session('success'))
 
             <div class="alert-success">
@@ -120,6 +139,7 @@
         @endif
 
 
+        {{-- FILTERS --}}
         <form
             method="GET"
             action="{{ route('invoices.index') }}"
@@ -153,7 +173,10 @@
 
             <select name="status">
 
-                <option value="">All Status</option>
+                <option value="">
+                    All Status
+                </option>
+
 
                 @foreach([
                     'DRAFT',
@@ -168,7 +191,13 @@
                         value="{{ $status }}"
                         {{ request('status') === $status ? 'selected' : '' }}
                     >
-                        {{ ucwords(strtolower(str_replace('_', ' ', $status))) }}
+
+                        {{ ucwords(
+                            strtolower(
+                                str_replace('_', ' ', $status)
+                            )
+                        ) }}
+
                     </option>
 
                 @endforeach
@@ -178,7 +207,10 @@
 
             <select name="customer_id">
 
-                <option value="">All Customers</option>
+                <option value="">
+                    All Customers
+                </option>
+
 
                 @foreach($customerList as $customer)
 
@@ -198,6 +230,7 @@
                 type="submit"
                 class="filter-button"
             >
+                <i data-lucide="search"></i>
                 Search
             </button>
 
@@ -214,6 +247,7 @@
         </form>
 
 
+        {{-- INVOICE TABLE --}}
         <section class="invoice-table">
 
             <div class="table-wrap">
@@ -250,49 +284,80 @@
 
 
                             <td>
-                                {{ $invoice->invoice_number }}
+                                <strong>
+                                    {{ $invoice->invoice_number }}
+                                </strong>
                             </td>
 
 
                             <td>
-                                {{ \Carbon\Carbon::parse($invoice->invoice_date)->format('Y-m-d') }}
-                            </td>
-
-
-                            <td>
-                                {{ $invoice->business_name }}
-                            </td>
-
-
-                            <td>
-                                {{ $invoice->due_date
-                                    ? \Carbon\Carbon::parse($invoice->due_date)->format('Y-m-d')
+                                {{ $invoice->invoice_date
+                                    ? \Carbon\Carbon::parse(
+                                        $invoice->invoice_date
+                                      )->format('d M Y')
                                     : '-' }}
                             </td>
 
 
                             <td>
-                                {{ number_format($invoice->grand_total, 2) }}
+                                {{ $invoice->business_name ?: '-' }}
                             </td>
 
 
                             <td>
-                                {{ number_format($invoice->paid_amount, 2) }}
+                                {{ $invoice->due_date
+                                    ? \Carbon\Carbon::parse(
+                                        $invoice->due_date
+                                      )->format('d M Y')
+                                    : '-' }}
                             </td>
 
 
                             <td>
-                                {{ number_format($invoice->balance_amount, 2) }}
+                                {{ number_format(
+                                    (float) $invoice->grand_total,
+                                    2
+                                ) }}
+                            </td>
+
+
+                            <td>
+                                {{ number_format(
+                                    (float) $invoice->amount_paid,
+                                    2
+                                ) }}
+                            </td>
+
+
+                            <td>
+                                {{ number_format(
+                                    (float) $invoice->balance_amount,
+                                    2
+                                ) }}
                             </td>
 
 
                             <td>
 
-                                <span class="invoice-status {{ strtolower(str_replace('_', '-', $invoice->status)) }}">
+                                <span
+                                    class="invoice-status {{
+                                        strtolower(
+                                            str_replace(
+                                                '_',
+                                                '-',
+                                                $invoice->status
+                                            )
+                                        )
+                                    }}"
+                                >
 
                                     {{ ucwords(
                                         strtolower(
-                                            str_replace('_', ' ', $invoice->status)
+                                            str_replace(
+                                                '_',
+                                                ' ',
+                                                $invoice->status
+                                            )
                                         )
                                     ) }}
 
@@ -308,7 +373,10 @@
                                     @if(Route::has('invoices.show'))
 
                                         <a
-                                            href="{{ route('invoices.show', $invoice->id) }}"
+                                            href="{{ route(
+                                                'invoices.show',
+                                                $invoice->id
+                                            ) }}"
                                             title="View"
                                         >
                                             <i data-lucide="eye"></i>
@@ -320,7 +388,10 @@
                                     @if(Route::has('invoices.edit'))
 
                                         <a
-                                            href="{{ route('invoices.edit', $invoice->id) }}"
+                                            href="{{ route(
+                                                'invoices.edit',
+                                                $invoice->id
+                                            ) }}"
                                             title="Edit"
                                         >
                                             <i data-lucide="pencil"></i>
@@ -329,7 +400,10 @@
                                     @endif
 
 
-                                    <button type="button">
+                                    <button
+                                        type="button"
+                                        title="More"
+                                    >
                                         <i data-lucide="more-horizontal"></i>
                                     </button>
 
@@ -344,12 +418,19 @@
 
                         <tr>
 
-                            <td colspan="10" class="empty">
+                            <td
+                                colspan="10"
+                                class="empty"
+                            >
 
                                 @if(!$companyId)
+
                                     Select a company to view invoices.
+
                                 @else
+
                                     No invoices found.
+
                                 @endif
 
                             </td>
@@ -365,17 +446,24 @@
             </div>
 
 
+            {{-- PAGINATION --}}
             <div class="table-footer">
 
                 <span>
+
                     Showing
                     {{ $invoices->firstItem() ?? 0 }}
+
                     to
                     {{ $invoices->lastItem() ?? 0 }}
+
                     of
                     {{ $invoices->total() }}
+
                     invoices
+
                 </span>
+
 
                 {{ $invoices->links() }}
 
