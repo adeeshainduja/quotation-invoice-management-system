@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,67 +15,7 @@
 
 <body>
 
-<aside class="sidebar">
-
-    <div class="logo">
-        <i data-lucide="file-text"></i>
-
-        <div>
-            <strong>Quotation & Invoice</strong>
-            <small>Management System</small>
-        </div>
-    </div>
-
-    <nav>
-
-        <a href="{{ route('dashboard', ['company_id' => $companyId]) }}">
-            <i data-lucide="house"></i>
-            Dashboard
-        </a>
-
-        <a href="{{ route('companies.index') }}">
-            <i data-lucide="building-2"></i>
-            Companies
-        </a>
-
-        <a href="{{ route('customers.index') }}" class="active">
-            <i data-lucide="users"></i>
-            Customers
-        </a>
-
-        <a href="{{ route('quotations.index', ['company_id' => $companyId]) }}">
-            <i data-lucide="file-text"></i>
-            Quotations
-        </a>
-
-        <a href="#">
-            <i data-lucide="receipt-text"></i>
-            Invoices
-        </a>
-
-        <a href="#">
-            <i data-lucide="wallet"></i>
-            Payments
-        </a>
-
-        <a href="#">
-            <i data-lucide="files"></i>
-            Templates
-        </a>
-
-        <a href="#">
-            <i data-lucide="bar-chart-3"></i>
-            Reports
-        </a>
-
-        <a href="#">
-            <i data-lucide="settings"></i>
-            Settings
-        </a>
-
-    </nav>
-
-</aside>
+@include('partials.sidebar')
 
 
 <div class="page">
@@ -88,6 +29,11 @@
                 class="company-select"
                 onchange="this.form.submit()"
             >
+
+                <option value="">
+                    Select Company
+                </option>
+
                 @foreach($companyList as $company)
 
                     <option
@@ -98,6 +44,7 @@
                     </option>
 
                 @endforeach
+
             </select>
 
         </form>
@@ -109,6 +56,7 @@
                 <i data-lucide="bell"></i>
                 <span></span>
             </div>
+
 
             <div class="user">
 
@@ -131,47 +79,76 @@
     <main>
 
         <div class="breadcrumb">
-            <a href="{{ route('dashboard') }}">Home</a>
+
+            <a href="{{ route('dashboard') }}">
+                Home
+            </a>
+
             <span>›</span>
 
-            <a href="{{ route('customers.index', ['company_id' => $companyId]) }}">
+            <a href="{{ $companyId
+                ? route('customers.index', ['company_id' => $companyId])
+                : route('customers.index') }}">
                 Customers
             </a>
 
             <span>›</span>
+
             Add Customer
+
         </div>
 
 
         <div class="create-heading">
 
             <div>
+
                 <h1>Add New Customer</h1>
 
                 <p>
                     Enter customer information to add a new customer under the selected company.
                 </p>
+
             </div>
 
+
             <a
-                href="{{ route('customers.index', ['company_id' => $companyId]) }}"
+                href="{{ $companyId
+                    ? route('customers.index', ['company_id' => $companyId])
+                    : route('customers.index') }}"
                 class="back-btn"
             >
+
                 <i data-lucide="arrow-left"></i>
+
                 Back to Customers
+
             </a>
 
         </div>
 
 
         @if ($errors->any())
+
             <div class="form-errors">
                 {{ $errors->first() }}
             </div>
+
         @endif
 
+
         @if($companyList->isEmpty())
-            <div class="form-errors">No active company exists. <a href="{{ route('companies.create') }}">Add Company</a></div>
+
+            <div class="form-errors">
+
+                No active company exists.
+
+                <a href="{{ route('companies.create') }}">
+                    Add Company
+                </a>
+
+            </div>
+
         @endif
 
 
@@ -179,7 +156,9 @@
             method="POST"
             action="{{ route('customers.store') }}"
         >
+
             @csrf
+
 
             <div class="form-grid">
 
@@ -192,12 +171,31 @@
                         Basic Information
                     </h2>
 
-                    <label>Company <span>*</span></label>
-                    <select name="company_id" required>
-                        <option value="">Select Company</option>
+
+                    <label>
+                        Company <span>*</span>
+                    </label>
+
+                    <select
+                        name="company_id"
+                        required
+                    >
+
+                        <option value="">
+                            Select Company
+                        </option>
+
                         @foreach($companyList as $company)
-                            <option value="{{ $company->id }}" {{ old('company_id', $companyId) == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
+
+                            <option
+                                value="{{ $company->id }}"
+                                {{ old('company_id', $companyId) == $company->id ? 'selected' : '' }}
+                            >
+                                {{ $company->name }}
+                            </option>
+
                         @endforeach
+
                     </select>
 
 
@@ -230,7 +228,10 @@
                     <div class="two-columns">
 
                         <div>
-                            <label>Registration Number</label>
+
+                            <label>
+                                Registration Number
+                            </label>
 
                             <input
                                 type="text"
@@ -238,11 +239,15 @@
                                 value="{{ old('registration_number') }}"
                                 placeholder="Enter registration number"
                             >
+
                         </div>
 
 
                         <div>
-                            <label>VAT Number</label>
+
+                            <label>
+                                VAT Number
+                            </label>
 
                             <input
                                 type="text"
@@ -250,6 +255,7 @@
                                 value="{{ old('vat_number') }}"
                                 placeholder="Enter VAT number"
                             >
+
                         </div>
 
                     </div>
@@ -258,7 +264,7 @@
 
 
 
-                {{-- CONTACT --}}
+                {{-- CONTACT INFORMATION --}}
                 <section class="form-card">
 
                     <h2>
@@ -267,7 +273,9 @@
                     </h2>
 
 
-                    <label>Email</label>
+                    <label>
+                        Email
+                    </label>
 
                     <input
                         type="email"
@@ -277,7 +285,9 @@
                     >
 
 
-                    <label>Phone</label>
+                    <label>
+                        Phone
+                    </label>
 
                     <input
                         type="text"
@@ -312,7 +322,9 @@
                     >
 
 
-                    <label>Address Line 2</label>
+                    <label>
+                        Address Line 2
+                    </label>
 
                     <input
                         type="text"
@@ -325,6 +337,7 @@
                     <div class="two-columns">
 
                         <div>
+
                             <label>
                                 City <span>*</span>
                             </label>
@@ -336,15 +349,20 @@
                                 placeholder="Enter city"
                                 required
                             >
+
                         </div>
 
 
                         <div>
+
                             <label>
                                 Country <span>*</span>
                             </label>
 
-                            <select name="country" required>
+                            <select
+                                name="country"
+                                required
+                            >
 
                                 <option
                                     value="Sri Lanka"
@@ -370,7 +388,7 @@
 
 
 
-                {{-- ADDITIONAL --}}
+                {{-- ADDITIONAL INFORMATION --}}
                 <section class="form-card">
 
                     <h2>
@@ -379,7 +397,9 @@
                     </h2>
 
 
-                    <label>Internal Notes</label>
+                    <label>
+                        Internal Notes
+                    </label>
 
                     <textarea
                         name="notes"
@@ -387,11 +407,15 @@
                     >{{ old('notes') }}</textarea>
 
 
-                    <label>Status</label>
+                    <label>
+                        Status
+                    </label>
+
 
                     <div class="status-options">
 
                         <label>
+
                             <input
                                 type="radio"
                                 name="status"
@@ -400,10 +424,12 @@
                             >
 
                             Active
+
                         </label>
 
 
                         <label>
+
                             <input
                                 type="radio"
                                 name="status"
@@ -412,6 +438,7 @@
                             >
 
                             Inactive
+
                         </label>
 
                     </div>
@@ -424,15 +451,25 @@
             <div class="form-actions">
 
                 <a
-                    href="{{ route('customers.index', ['company_id' => $companyId]) }}"
+                    href="{{ $companyId
+                        ? route('customers.index', ['company_id' => $companyId])
+                        : route('customers.index') }}"
                     class="cancel-btn"
                 >
                     Cancel
                 </a>
 
-                <button type="submit" class="save-btn">
+
+                <button
+                    type="submit"
+                    class="save-btn"
+                    {{ $companyList->isEmpty() ? 'disabled' : '' }}
+                >
+
                     <i data-lucide="save"></i>
+
                     Save Customer
+
                 </button>
 
             </div>
@@ -449,4 +486,5 @@
 </script>
 
 </body>
+
 </html>

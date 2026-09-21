@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\InvoiceController;
 
 Route::middleware('guest')->group(function () {
 
@@ -63,6 +64,12 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/quotations', [QuotationController::class, 'store'])
         ->name('quotations.store');
+
+
+    Route::get('/invoices', [InvoiceController::class, 'index'])
+    ->name('invoices.index');
+
+    
 
 
     Route::post('/logout', [AuthController::class, 'logout'])

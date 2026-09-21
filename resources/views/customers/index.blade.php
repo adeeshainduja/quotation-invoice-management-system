@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,71 +15,18 @@
 
 <body>
 
-<aside class="sidebar">
-
-    <div class="logo">
-        <i data-lucide="file-text"></i>
-
-        <div>
-            <strong>Quotation & Invoice</strong>
-            <small>Management System</small>
-        </div>
-    </div>
-
-    <nav>
-
-        <a href="{{ route('dashboard', ['company_id' => $companyId]) }}">
-            <i data-lucide="house"></i>
-            Dashboard
-        </a>
-
-        <a href="{{ route('companies.index') }}">
-            <i data-lucide="building-2"></i>
-            Companies
-        </a>
-
-        <a href="{{ route('customers.index') }}" class="active">
-            <i data-lucide="users"></i>
-            Customers
-        </a>
-
-        <a href="{{ route('quotations.index', ['company_id' => $companyId]) }}">
-            <i data-lucide="file-text"></i>
-            Quotations
-        </a>
-
-        <a href="#">
-            <i data-lucide="receipt-text"></i>
-            Invoices
-        </a>
-
-        <a href="#">
-            <i data-lucide="wallet"></i>
-            Payments
-        </a>
-
-        <a href="#">
-            <i data-lucide="files"></i>
-            Templates
-        </a>
-
-        <a href="#">
-            <i data-lucide="settings"></i>
-            Settings
-        </a>
-
-    </nav>
-
-</aside>
+@include('partials.sidebar')
 
 
 <div class="page">
 
+    {{-- TOP BAR --}}
     <header class="topbar">
 
-        <button class="menu">
+        <button class="menu" type="button">
             <i data-lucide="menu"></i>
         </button>
+
 
         <div class="topbar-right">
 
@@ -89,6 +37,10 @@
                     class="company-select"
                     onchange="this.form.submit()"
                 >
+
+                    <option value="">
+                        Select Company
+                    </option>
 
                     @foreach($companyList as $company)
 
@@ -132,13 +84,21 @@
 
     <main>
 
+        {{-- BREADCRUMB --}}
         <div class="breadcrumb">
-            <a href="{{ route('dashboard') }}">Home</a>
+
+            <a href="{{ route('dashboard') }}">
+                Home
+            </a>
+
             <span>›</span>
+
             Customers
+
         </div>
 
 
+        {{-- PAGE HEADER --}}
         <div class="customer-heading">
 
             <div>
@@ -149,25 +109,56 @@
                 </p>
             </div>
 
-            <a href="{{ route('customers.create') }}" class="add-customer">
+
+            <a
+                href="{{ $companyId
+                    ? route('customers.create', ['company_id' => $companyId])
+                    : route('customers.create') }}"
+                class="add-customer"
+            >
                 <i data-lucide="plus"></i>
+
                 Add Customer
             </a>
 
         </div>
 
 
+        {{-- MESSAGES --}}
+        @if(session('success'))
+
+            <div class="alert-success">
+                {{ session('success') }}
+            </div>
+
+        @endif
+
+
+        @if(session('error'))
+
+            <div class="alert-error">
+                {{ session('error') }}
+            </div>
+
+        @endif
+
+
+        {{-- FILTERS --}}
         <form
             method="GET"
             action="{{ route('customers.index') }}"
             class="customer-filter"
         >
 
-            <input
-                type="hidden"
-                name="company_id"
-                value="{{ $companyId }}"
-            >
+            @if($companyId)
+
+                <input
+                    type="hidden"
+                    name="company_id"
+                    value="{{ $companyId }}"
+                >
+
+            @endif
 
 
             <div class="search-input">
@@ -186,7 +177,9 @@
 
             <select name="status">
 
-                <option value="">All Status</option>
+                <option value="">
+                    All Status
+                </option>
 
                 <option
                     value="ACTIVE"
@@ -207,7 +200,9 @@
 
             <select name="city">
 
-                <option value="">All Cities</option>
+                <option value="">
+                    All Cities
+                </option>
 
                 @foreach($cities as $city)
 
@@ -223,13 +218,19 @@
             </select>
 
 
-            <button class="search-btn">
+            <button
+                type="submit"
+                class="search-btn"
+            >
+                <i data-lucide="search"></i>
                 Search
             </button>
 
 
             <a
-                href="{{ route('customers.index', ['company_id' => $companyId]) }}"
+                href="{{ $companyId
+                    ? route('customers.index', ['company_id' => $companyId])
+                    : route('customers.index') }}"
                 class="clear-btn"
             >
                 Clear Filters
@@ -238,6 +239,7 @@
         </form>
 
 
+        {{-- CUSTOMER TABLE --}}
         <section class="customer-table-card">
 
             <div class="table-wrap">
@@ -245,6 +247,7 @@
                 <table>
 
                     <thead>
+
                     <tr>
                         <th>#</th>
                         <th>Customer Name</th>
@@ -255,7 +258,9 @@
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
+
                     </thead>
+
 
                     <tbody>
 
@@ -267,49 +272,81 @@
                                 {{ $customers->firstItem() + $loop->index }}
                             </td>
 
+
                             <td>
                                 {{ $customer->customer_name }}
                             </td>
+
 
                             <td>
                                 {{ $customer->business_name }}
                             </td>
 
+
                             <td>
                                 {{ $customer->email ?: '-' }}
                             </td>
+
 
                             <td>
                                 {{ $customer->phone ?: '-' }}
                             </td>
 
+
                             <td>
-                                {{ $customer->city }}
+                                {{ $customer->city ?: '-' }}
                             </td>
+
 
                             <td>
 
                                 <span class="customer-status {{ strtolower($customer->status) }}">
-
-                                    {{ $customer->status }}
-
+                                    {{ ucfirst(strtolower($customer->status)) }}
                                 </span>
 
                             </td>
+
 
                             <td>
 
                                 <div class="actions">
 
-                                    <a href="#" title="View">
+                                    {{-- VIEW --}}
+                                    <a
+                                        href="{{ route('customers.show', $customer->id) }}"
+                                        title="View"
+                                    >
                                         <i data-lucide="eye"></i>
                                     </a>
 
-                                    <a href="#" title="Edit">
-                                        <i data-lucide="pencil"></i>
-                                    </a>
 
-                                    <button type="button">
+                                    {{-- EDIT --}}
+                                    @if(Route::has('customers.edit'))
+
+                                        <a
+                                            href="{{ route('customers.edit', $customer->id) }}"
+                                            title="Edit"
+                                        >
+                                            <i data-lucide="pencil"></i>
+                                        </a>
+
+                                    @else
+
+                                        <button
+                                            type="button"
+                                            title="Edit not available yet"
+                                            disabled
+                                        >
+                                            <i data-lucide="pencil"></i>
+                                        </button>
+
+                                    @endif
+
+
+                                    <button
+                                        type="button"
+                                        title="More"
+                                    >
                                         <i data-lucide="more-horizontal"></i>
                                     </button>
 
@@ -319,12 +356,28 @@
 
                         </tr>
 
+
                     @empty
 
                         <tr>
-                            <td colspan="8" class="empty">
-                                No customers found.
+
+                            <td
+                                colspan="8"
+                                class="empty"
+                            >
+
+                                @if(!$companyId)
+
+                                    No company selected.
+
+                                @else
+
+                                    No customers found.
+
+                                @endif
+
                             </td>
+
                         </tr>
 
                     @endforelse
@@ -336,6 +389,7 @@
             </div>
 
 
+            {{-- PAGINATION --}}
             <div class="table-footer">
 
                 <span>
@@ -347,6 +401,7 @@
                     {{ $customers->total() }}
                     customers
                 </span>
+
 
                 {{ $customers->links() }}
 
@@ -364,4 +419,5 @@
 </script>
 
 </body>
+
 </html>

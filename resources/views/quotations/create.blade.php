@@ -15,71 +15,13 @@
 
 <body>
 
-<aside class="sidebar">
-
-    <div class="logo">
-        <i data-lucide="file-text"></i>
-
-        <div>
-            <strong>Quotation & Invoice</strong>
-            <small>Management System</small>
-        </div>
-    </div>
-
-    <nav>
-
-        <a href="{{ route('dashboard', ['company_id' => $companyId]) }}">
-            <i data-lucide="house"></i>
-            Dashboard
-        </a>
-
-        <a href="{{ route('companies.index') }}">
-            <i data-lucide="building-2"></i>
-            Companies
-        </a>
-
-        <a href="{{ route('customers.index', ['company_id' => $companyId]) }}">
-            <i data-lucide="users"></i>
-            Customers
-        </a>
-
-        <a href="{{ route('quotations.index') }}" class="active">
-            <i data-lucide="file-text"></i>
-            Quotations
-        </a>
-
-        <a href="#">
-            <i data-lucide="receipt-text"></i>
-            Invoices
-        </a>
-
-        <a href="#">
-            <i data-lucide="wallet"></i>
-            Payments
-        </a>
-
-        <a href="#">
-            <i data-lucide="files"></i>
-            Templates
-        </a>
-
-        <a href="#">
-            <i data-lucide="bar-chart-3"></i>
-            Reports
-        </a>
-
-        <a href="#">
-            <i data-lucide="settings"></i>
-            Settings
-        </a>
-
-    </nav>
-
-</aside>
+{{-- SHARED SIDEBAR --}}
+@include('partials.sidebar')
 
 
 <div class="page">
 
+    {{-- TOP BAR --}}
     <header class="topbar">
 
         <form method="GET" action="{{ route('quotations.create') }}">
@@ -115,6 +57,7 @@
                 <span></span>
             </div>
 
+
             <div class="user">
 
                 <div class="avatar">
@@ -135,19 +78,29 @@
 
     <main>
 
+        {{-- BREADCRUMB --}}
         <div class="breadcrumb">
-            <a href="{{ route('dashboard') }}">Home</a>
+
+            <a href="{{ route('dashboard') }}">
+                Home
+            </a>
+
             <span>›</span>
 
-            <a href="{{ route('quotations.index', ['company_id' => $companyId]) }}">
+            <a href="{{ $companyId
+                ? route('quotations.index', ['company_id' => $companyId])
+                : route('quotations.index') }}">
                 Quotations
             </a>
 
             <span>›</span>
+
             New Quotation
+
         </div>
 
 
+        {{-- PAGE HEADER --}}
         <div class="create-heading">
 
             <div>
@@ -155,8 +108,11 @@
                 <p>Create a new quotation for your customer</p>
             </div>
 
+
             <a
-                href="{{ route('quotations.index', ['company_id' => $companyId]) }}"
+                href="{{ $companyId
+                    ? route('quotations.index', ['company_id' => $companyId])
+                    : route('quotations.index') }}"
                 class="back-btn"
             >
                 <i data-lucide="arrow-left"></i>
@@ -166,16 +122,35 @@
         </div>
 
 
+        {{-- VALIDATION ERRORS --}}
         @if ($errors->any())
+
             <div class="form-errors">
                 {{ $errors->first() }}
             </div>
+
         @endif
 
+
+        {{-- COMPANY WARNING --}}
         @if($companyList->isEmpty())
-            <div class="form-errors">No active company exists. <a href="{{ route('companies.create') }}">Add Company</a></div>
-        @elseif(! $company)
-            <div class="form-errors">Select an active company before creating a quotation.</div>
+
+            <div class="form-errors">
+
+                No active company exists.
+
+                <a href="{{ route('companies.create') }}">
+                    Add Company
+                </a>
+
+            </div>
+
+        @elseif(!$company)
+
+            <div class="form-errors">
+                Select an active company before creating a quotation.
+            </div>
+
         @endif
 
 
@@ -187,16 +162,23 @@
 
             @csrf
 
-            <input
-                type="hidden"
-                name="company_id"
-                value="{{ $companyId }}"
-            >
+
+            @if($companyId)
+
+                <input
+                    type="hidden"
+                    name="company_id"
+                    value="{{ $companyId }}"
+                >
+
+            @endif
 
 
+            {{-- TOP SECTION --}}
             <div class="top-grid">
 
-                {{-- CUSTOMER --}}
+
+                {{-- CUSTOMER INFORMATION --}}
                 <section class="form-card">
 
                     <h2>
@@ -204,7 +186,11 @@
                         Customer Information
                     </h2>
 
-                    <label>Select Customer *</label>
+
+                    <label>
+                        Select Customer *
+                    </label>
+
 
                     <div class="customer-select-row">
 
@@ -212,11 +198,13 @@
                             name="customer_id"
                             id="customerSelect"
                             required
+                            @disabled(!$company)
                         >
 
                             <option value="">
                                 Search and select a customer...
                             </option>
+
 
                             @foreach($customers as $customer)
 
@@ -239,7 +227,9 @@
 
 
                         <a
-                            href="{{ route('customers.create', ['company_id' => $companyId]) }}"
+                            href="{{ $companyId
+                                ? route('customers.create', ['company_id' => $companyId])
+                                : route('customers.create') }}"
                             class="add-customer-btn"
                         >
                             <i data-lucide="plus"></i>
@@ -249,7 +239,10 @@
                     </div>
 
 
-                    <div class="customer-preview" id="customerPreview">
+                    <div
+                        class="customer-preview"
+                        id="customerPreview"
+                    >
 
                         <strong id="previewBusiness">
                             Select a customer
@@ -264,7 +257,8 @@
                 </section>
 
 
-                {{-- DETAILS --}}
+
+                {{-- QUOTATION DETAILS --}}
                 <section class="form-card">
 
                     <h2>
@@ -272,25 +266,40 @@
                         Quotation Details
                     </h2>
 
+
                     <div class="two-columns">
 
+
                         <div>
-                            <label>Quotation Number *</label>
+
+                            <label>
+                                Quotation Number *
+                            </label>
 
                             <input
                                 type="text"
-                                value="{{ $quotationNumber }}"
+                                value="{{ $quotationNumber ?: 'Select company first' }}"
                                 readonly
                             >
+
                         </div>
 
 
                         <div>
-                            <label>Template *</label>
 
-                            <select name="template_id" required>
+                            <label>
+                                Template *
+                            </label>
 
-                                <option value="">Select Template</option>
+                            <select
+                                name="template_id"
+                                required
+                                @disabled(!$company)
+                            >
+
+                                <option value="">
+                                    Select Template
+                                </option>
 
                                 @foreach($templates as $template)
 
@@ -304,11 +313,15 @@
                                 @endforeach
 
                             </select>
+
                         </div>
 
 
                         <div>
-                            <label>Quotation Date *</label>
+
+                            <label>
+                                Quotation Date *
+                            </label>
 
                             <input
                                 type="date"
@@ -316,22 +329,30 @@
                                 value="{{ old('quotation_date', now()->format('Y-m-d')) }}"
                                 required
                             >
+
                         </div>
 
 
                         <div>
-                            <label>Currency *</label>
+
+                            <label>
+                                Currency *
+                            </label>
 
                             <input
                                 type="text"
                                 value="{{ $company->currency ?? 'LKR' }}"
                                 readonly
                             >
+
                         </div>
 
 
                         <div>
-                            <label>Valid Until *</label>
+
+                            <label>
+                                Valid Until *
+                            </label>
 
                             <input
                                 type="date"
@@ -339,11 +360,15 @@
                                 value="{{ old('expiry_date', now()->addDays(30)->format('Y-m-d')) }}"
                                 required
                             >
+
                         </div>
 
 
                         <div>
-                            <label>Reference No.</label>
+
+                            <label>
+                                Reference No.
+                            </label>
 
                             <input
                                 type="text"
@@ -351,6 +376,7 @@
                                 value="{{ old('reference') }}"
                                 placeholder="Enter reference number (optional)"
                             >
+
                         </div>
 
                     </div>
@@ -361,7 +387,7 @@
 
 
 
-            {{-- ITEMS --}}
+            {{-- QUOTATION ITEMS --}}
             <section class="items-card">
 
                 <div class="items-header">
@@ -371,10 +397,12 @@
                         Quotation Items
                     </h2>
 
+
                     <button
                         type="button"
                         class="add-item-btn"
                         onclick="addItem()"
+                        @disabled(!$company)
                     >
                         <i data-lucide="plus"></i>
                         Add Item
@@ -407,13 +435,17 @@
 
                         <tr class="item-row">
 
-                            <td class="row-number">1</td>
+                            <td class="row-number">
+                                1
+                            </td>
+
 
                             <td>
 
                                 <input
                                     type="text"
                                     name="items[0][item_name]"
+                                    value="{{ old('items.0.item_name') }}"
                                     placeholder="Item name"
                                     required
                                 >
@@ -421,6 +453,7 @@
                                 <input
                                     type="text"
                                     name="items[0][description]"
+                                    value="{{ old('items.0.description') }}"
                                     placeholder="Description"
                                     class="description"
                                 >
@@ -429,54 +462,67 @@
 
 
                             <td>
+
                                 <input
                                     type="number"
                                     name="items[0][quantity]"
-                                    value="1"
+                                    value="{{ old('items.0.quantity', 1) }}"
                                     min="0.01"
                                     step="0.01"
                                     class="calc quantity"
                                     required
                                 >
+
                             </td>
 
 
                             <td>
+
                                 <input
                                     type="number"
                                     name="items[0][unit_price]"
-                                    value="0"
+                                    value="{{ old('items.0.unit_price', 0) }}"
                                     min="0"
                                     step="0.01"
                                     class="calc unit-price"
                                     required
                                 >
+
                             </td>
 
 
                             <td>
+
                                 <input
                                     type="number"
                                     name="items[0][discount]"
-                                    value="0"
+                                    value="{{ old('items.0.discount', 0) }}"
                                     min="0"
                                     max="100"
                                     step="0.01"
                                     class="calc discount"
                                 >
+
                             </td>
 
 
                             <td>
+
                                 <input
                                     type="number"
                                     name="items[0][tax]"
-                                    value="{{ $company && $company->vat_registered ? ($company->vat_percentage ?? 0) : 0 }}"
+                                    value="{{ old(
+                                        'items.0.tax',
+                                        $company && $company->vat_registered
+                                            ? ($company->vat_percentage ?? 0)
+                                            : 0
+                                    ) }}"
                                     min="0"
                                     max="100"
                                     step="0.01"
                                     class="calc tax"
                                 >
+
                             </td>
 
 
@@ -509,8 +555,11 @@
 
 
 
+            {{-- BOTTOM SECTION --}}
             <div class="bottom-grid">
 
+
+                {{-- ADDITIONAL INFORMATION --}}
                 <section class="form-card">
 
                     <h2>
@@ -522,22 +571,30 @@
                     <div class="two-columns">
 
                         <div>
-                            <label>Terms & Conditions</label>
+
+                            <label>
+                                Terms & Conditions
+                            </label>
 
                             <textarea
                                 name="terms_conditions"
                                 placeholder="Enter terms and conditions"
                             >{{ old('terms_conditions') }}</textarea>
+
                         </div>
 
 
                         <div>
-                            <label>Notes</label>
+
+                            <label>
+                                Notes
+                            </label>
 
                             <textarea
                                 name="notes"
                                 placeholder="Enter any additional notes..."
                             >{{ old('notes') }}</textarea>
+
                         </div>
 
                     </div>
@@ -546,6 +603,7 @@
 
 
 
+                {{-- SUMMARY --}}
                 <section class="summary-card">
 
                     <h2>
@@ -555,35 +613,52 @@
 
 
                     <div class="summary-row">
-                        <span>Subtotal</span>
+
+                        <span>
+                            Subtotal
+                        </span>
+
                         <strong>
                             {{ $company->currency ?? 'LKR' }}
                             <span id="subtotal">0.00</span>
                         </strong>
+
                     </div>
 
 
                     <div class="summary-row">
-                        <span>Discount</span>
+
+                        <span>
+                            Discount
+                        </span>
+
                         <strong>
                             {{ $company->currency ?? 'LKR' }}
                             <span id="discountTotal">0.00</span>
                         </strong>
+
                     </div>
 
 
                     <div class="summary-row">
-                        <span>Tax</span>
+
+                        <span>
+                            Tax
+                        </span>
+
                         <strong>
                             {{ $company->currency ?? 'LKR' }}
                             <span id="taxTotal">0.00</span>
                         </strong>
+
                     </div>
 
 
                     <div class="summary-total">
 
-                        <span>Total Amount</span>
+                        <span>
+                            Total Amount
+                        </span>
 
                         <strong>
                             {{ $company->currency ?? 'LKR' }}
@@ -598,21 +673,27 @@
 
 
 
+            {{-- FORM ACTIONS --}}
             <div class="form-actions">
 
                 <a
-                    href="{{ route('quotations.index', ['company_id' => $companyId]) }}"
+                    href="{{ $companyId
+                        ? route('quotations.index', ['company_id' => $companyId])
+                        : route('quotations.index') }}"
                     class="cancel-btn"
                 >
                     Cancel
                 </a>
 
 
-                <button type="submit" class="save-btn" @disabled(! $company)>
-
+                <button
+                    type="submit"
+                    class="save-btn"
+                    @disabled(!$company)
+                >
                     <i data-lucide="save"></i>
-                    Save Quotation
 
+                    Save Quotation
                 </button>
 
             </div>
@@ -624,270 +705,370 @@
 </div>
 
 
+
 <script>
 
-let itemIndex = 1;
+    let itemIndex = 1;
 
-const defaultTax =
-    {{ $company && $company->vat_registered ? ($company->vat_percentage ?? 0) : 0 }};
-
-
-function addItem()
-{
-    const body = document.getElementById('itemsBody');
-
-    const row = document.createElement('tr');
-
-    row.className = 'item-row';
-
-    row.innerHTML = `
-        <td class="row-number">${itemIndex + 1}</td>
-
-        <td>
-            <input
-                type="text"
-                name="items[${itemIndex}][item_name]"
-                placeholder="Item name"
-                required
-            >
-
-            <input
-                type="text"
-                name="items[${itemIndex}][description]"
-                placeholder="Description"
-                class="description"
-            >
-        </td>
-
-        <td>
-            <input
-                type="number"
-                name="items[${itemIndex}][quantity]"
-                value="1"
-                min="0.01"
-                step="0.01"
-                class="calc quantity"
-                required
-            >
-        </td>
-
-        <td>
-            <input
-                type="number"
-                name="items[${itemIndex}][unit_price]"
-                value="0"
-                min="0"
-                step="0.01"
-                class="calc unit-price"
-                required
-            >
-        </td>
-
-        <td>
-            <input
-                type="number"
-                name="items[${itemIndex}][discount]"
-                value="0"
-                min="0"
-                max="100"
-                step="0.01"
-                class="calc discount"
-            >
-        </td>
-
-        <td>
-            <input
-                type="number"
-                name="items[${itemIndex}][tax]"
-                value="${defaultTax}"
-                min="0"
-                max="100"
-                step="0.01"
-                class="calc tax"
-            >
-        </td>
-
-        <td class="line-total">0.00</td>
-
-        <td>
-            <button
-                type="button"
-                class="delete-item"
-                onclick="removeItem(this)"
-            >
-                <i data-lucide="trash-2"></i>
-            </button>
-        </td>
-    `;
-
-    body.appendChild(row);
-
-    itemIndex++;
-
-    lucide.createIcons();
-}
+    const defaultTax = @json(
+        $company && $company->vat_registered
+            ? (float) ($company->vat_percentage ?? 0)
+            : 0
+    );
 
 
-function removeItem(button)
-{
-    const rows =
-        document.querySelectorAll('.item-row');
+    function addItem()
+    {
+        const body = document.getElementById('itemsBody');
 
-    if (rows.length === 1) {
-        return;
-    }
+        const row = document.createElement('tr');
 
-    button.closest('tr').remove();
+        row.className = 'item-row';
 
-    updateNumbers();
-    calculateTotals();
-}
+        row.innerHTML = `
+            <td class="row-number">
+                ${itemIndex + 1}
+            </td>
 
+            <td>
 
-function updateNumbers()
-{
-    document
-        .querySelectorAll('.item-row')
-        .forEach((row, index) => {
+                <input
+                    type="text"
+                    name="items[${itemIndex}][item_name]"
+                    placeholder="Item name"
+                    required
+                >
 
-            row.querySelector('.row-number').textContent =
-                index + 1;
-        });
-}
+                <input
+                    type="text"
+                    name="items[${itemIndex}][description]"
+                    placeholder="Description"
+                    class="description"
+                >
 
+            </td>
 
-function calculateTotals()
-{
-    let subtotal = 0;
-    let discountTotal = 0;
-    let taxTotal = 0;
-    let grandTotal = 0;
+            <td>
 
-    document
-        .querySelectorAll('.item-row')
-        .forEach(row => {
+                <input
+                    type="number"
+                    name="items[${itemIndex}][quantity]"
+                    value="1"
+                    min="0.01"
+                    step="0.01"
+                    class="calc quantity"
+                    required
+                >
 
-            const quantity =
-                parseFloat(
-                    row.querySelector('.quantity').value
-                ) || 0;
+            </td>
 
-            const price =
-                parseFloat(
-                    row.querySelector('.unit-price').value
-                ) || 0;
+            <td>
 
-            const discount =
-                parseFloat(
-                    row.querySelector('.discount').value
-                ) || 0;
+                <input
+                    type="number"
+                    name="items[${itemIndex}][unit_price]"
+                    value="0"
+                    min="0"
+                    step="0.01"
+                    class="calc unit-price"
+                    required
+                >
 
-            const tax =
-                parseFloat(
-                    row.querySelector('.tax').value
-                ) || 0;
+            </td>
 
-            const lineSubtotal =
-                quantity * price;
+            <td>
 
-            const discountAmount =
-                lineSubtotal * discount / 100;
+                <input
+                    type="number"
+                    name="items[${itemIndex}][discount]"
+                    value="0"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    class="calc discount"
+                >
 
-            const taxable =
-                lineSubtotal - discountAmount;
+            </td>
 
-            const taxAmount =
-                taxable * tax / 100;
+            <td>
 
-            const lineTotal =
-                taxable + taxAmount;
+                <input
+                    type="number"
+                    name="items[${itemIndex}][tax]"
+                    value="${defaultTax}"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    class="calc tax"
+                >
 
-            subtotal += lineSubtotal;
-            discountTotal += discountAmount;
-            taxTotal += taxAmount;
-            grandTotal += lineTotal;
+            </td>
 
-            row.querySelector('.line-total').textContent =
-                lineTotal.toLocaleString(
-                    undefined,
-                    {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }
-                );
-        });
+            <td class="line-total">
+                0.00
+            </td>
 
+            <td>
 
-    document.getElementById('subtotal').textContent =
-        subtotal.toLocaleString(undefined, {
-            minimumFractionDigits: 2
-        });
+                <button
+                    type="button"
+                    class="delete-item"
+                    onclick="removeItem(this)"
+                >
+                    <i data-lucide="trash-2"></i>
+                </button>
 
-    document.getElementById('discountTotal').textContent =
-        discountTotal.toLocaleString(undefined, {
-            minimumFractionDigits: 2
-        });
+            </td>
+        `;
 
-    document.getElementById('taxTotal').textContent =
-        taxTotal.toLocaleString(undefined, {
-            minimumFractionDigits: 2
-        });
+        body.appendChild(row);
 
-    document.getElementById('grandTotal').textContent =
-        grandTotal.toLocaleString(undefined, {
-            minimumFractionDigits: 2
-        });
-}
+        itemIndex++;
 
+        lucide.createIcons();
 
-document.addEventListener('input', function(event) {
-
-    if (event.target.classList.contains('calc')) {
         calculateTotals();
     }
-});
 
 
-const customerSelect =
-    document.getElementById('customerSelect');
+    function removeItem(button)
+    {
+        const rows = document.querySelectorAll('.item-row');
 
+        if (rows.length === 1) {
+            return;
+        }
 
-function updateCustomer()
-{
-    const selected =
-        customerSelect.options[
-            customerSelect.selectedIndex
-        ];
+        button.closest('tr').remove();
 
-    if (!selected.value) {
-        return;
+        updateNumbers();
+        calculateTotals();
     }
 
-    document.getElementById('previewBusiness').textContent =
-        selected.dataset.business || '';
 
-    document.getElementById('previewName').textContent =
-        selected.dataset.name || '';
+    function updateNumbers()
+    {
+        document
+            .querySelectorAll('.item-row')
+            .forEach((row, index) => {
 
-    document.getElementById('previewAddress').textContent =
-        `${selected.dataset.address || ''}, ${selected.dataset.city || ''}`;
+                row.querySelector('.row-number').textContent =
+                    index + 1;
 
-    document.getElementById('previewContact').textContent =
-        `${selected.dataset.phone || ''} | ${selected.dataset.email || ''}`;
-}
-
-
-customerSelect.addEventListener(
-    'change',
-    updateCustomer
-);
+            });
+    }
 
 
-updateCustomer();
-calculateTotals();
-lucide.createIcons();
+    function calculateTotals()
+    {
+        let subtotal = 0;
+        let discountTotal = 0;
+        let taxTotal = 0;
+        let grandTotal = 0;
+
+
+        document
+            .querySelectorAll('.item-row')
+            .forEach(row => {
+
+                const quantity =
+                    parseFloat(
+                        row.querySelector('.quantity').value
+                    ) || 0;
+
+
+                const price =
+                    parseFloat(
+                        row.querySelector('.unit-price').value
+                    ) || 0;
+
+
+                const discount =
+                    parseFloat(
+                        row.querySelector('.discount').value
+                    ) || 0;
+
+
+                const tax =
+                    parseFloat(
+                        row.querySelector('.tax').value
+                    ) || 0;
+
+
+                const lineSubtotal =
+                    quantity * price;
+
+
+                const discountAmount =
+                    lineSubtotal * discount / 100;
+
+
+                const taxableAmount =
+                    lineSubtotal - discountAmount;
+
+
+                const taxAmount =
+                    taxableAmount * tax / 100;
+
+
+                const lineTotal =
+                    taxableAmount + taxAmount;
+
+
+                subtotal += lineSubtotal;
+
+                discountTotal += discountAmount;
+
+                taxTotal += taxAmount;
+
+                grandTotal += lineTotal;
+
+
+                row.querySelector('.line-total').textContent =
+                    lineTotal.toLocaleString(
+                        undefined,
+                        {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        }
+                    );
+
+            });
+
+
+        document.getElementById('subtotal').textContent =
+            subtotal.toLocaleString(
+                undefined,
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            );
+
+
+        document.getElementById('discountTotal').textContent =
+            discountTotal.toLocaleString(
+                undefined,
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            );
+
+
+        document.getElementById('taxTotal').textContent =
+            taxTotal.toLocaleString(
+                undefined,
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            );
+
+
+        document.getElementById('grandTotal').textContent =
+            grandTotal.toLocaleString(
+                undefined,
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            );
+    }
+
+
+    document.addEventListener('input', function (event) {
+
+        if (event.target.classList.contains('calc')) {
+            calculateTotals();
+        }
+
+    });
+
+
+
+    const customerSelect =
+        document.getElementById('customerSelect');
+
+
+    function updateCustomer()
+    {
+        if (!customerSelect) {
+            return;
+        }
+
+
+        const selected =
+            customerSelect.options[
+                customerSelect.selectedIndex
+            ];
+
+
+        if (!selected || !selected.value) {
+
+            document.getElementById('previewBusiness').textContent =
+                'Select a customer';
+
+            document.getElementById('previewName').textContent =
+                '';
+
+            document.getElementById('previewAddress').textContent =
+                '';
+
+            document.getElementById('previewContact').textContent =
+                '';
+
+            return;
+        }
+
+
+        document.getElementById('previewBusiness').textContent =
+            selected.dataset.business || '';
+
+
+        document.getElementById('previewName').textContent =
+            selected.dataset.name || '';
+
+
+        const addressParts = [
+            selected.dataset.address,
+            selected.dataset.city
+        ].filter(Boolean);
+
+
+        document.getElementById('previewAddress').textContent =
+            addressParts.join(', ');
+
+
+        const contactParts = [
+            selected.dataset.phone,
+            selected.dataset.email
+        ].filter(Boolean);
+
+
+        document.getElementById('previewContact').textContent =
+            contactParts.join(' | ');
+    }
+
+
+    if (customerSelect) {
+
+        customerSelect.addEventListener(
+            'change',
+            updateCustomer
+        );
+
+    }
+
+
+    updateCustomer();
+
+    calculateTotals();
+
+    lucide.createIcons();
 
 </script>
 
 </body>
+
 </html>
