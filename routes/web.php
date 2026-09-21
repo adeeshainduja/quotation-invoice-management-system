@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CustomerController;
 
 Route::middleware('guest')->group(function () {
 
@@ -35,3 +36,11 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 Route::get('/companies', [CompanyController::class, 'index'])
     ->middleware('auth')
     ->name('companies.index');
+
+Route::get('/customers', [CustomerController::class, 'index'])
+    ->middleware('auth')
+    ->name('customers.index');
+
+Route::get('/customers/{id}', [CustomerController::class, 'show'])
+    ->middleware('auth')
+    ->name('customers.show');
