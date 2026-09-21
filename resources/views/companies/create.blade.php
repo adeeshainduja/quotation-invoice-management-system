@@ -120,8 +120,8 @@
 
                     <input
                         type="text"
-                        name="tin_number"
-                        value="{{ old('tin_number') }}"
+                        name="tin"
+                        value="{{ old('tin') }}"
                         placeholder="Enter TIN"
                     >
 

@@ -333,7 +333,7 @@
 
 
                             <td>
-                                {{ $company->tin_number ?? '-' }}
+                                {{ $company->tin ?? '-' }}
                             </td>
 
 
