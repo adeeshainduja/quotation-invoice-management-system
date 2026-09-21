@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class QuotationController extends Controller
 {
@@ -11,52 +13,35 @@ class QuotationController extends Controller
     {
         $companyList = DB::table('companies')
             ->where('status', 'ACTIVE')
-            ->orderBy('name')
-            ->get(['id', 'name']);
+            ->orderBy('name')->get(['id', 'name']);
 
         $companyId = $request->integer('company_id')
             ?: optional($companyList->first())->id;
 
-        $customerList = DB::table('customers')
-            ->where('company_id', $companyId)
-            ->orderBy('business_name')
-            ->get(['id', 'business_name']);
+        $customerList = $companyId
+            ? DB::table('customers')
+                ->where('company_id', $companyId)
+                ->where('status', 'ACTIVE')
+                ->orderBy('business_name')->get()
+            : collect();
 
         $quotations = DB::table('quotations')
             ->join('customers', 'quotations.customer_id', '=', 'customers.id')
-            ->where('quotations.company_id', $companyId)
-
-            ->when($request->search, function ($query, $search) {
-                $query->where('quotations.quotation_number', 'like', "%{$search}%");
-            })
-
-            ->when($request->status, function ($query, $status) {
-                $query->where('quotations.status', $status);
-            })
-
-            ->when($request->customer_id, function ($query, $customerId) {
-                $query->where('quotations.customer_id', $customerId);
-            })
-
-            ->when($request->from_date, function ($query, $date) {
-                $query->whereDate('quotations.quotation_date', '>=', $date);
-            })
-
-            ->when($request->to_date, function ($query, $date) {
-                $query->whereDate('quotations.quotation_date', '<=', $date);
-            })
-
+            ->when($companyId,
+                fn($q) => $q->where('quotations.company_id', $companyId),
+                fn($q) => $q->whereRaw('1=0')
+            )
+            ->when($request->search,
+                fn($q, $v) => $q->where('quotation_number', 'like', "%$v%"))
+            ->when($request->status,
+                fn($q, $v) => $q->where('quotations.status', $v))
+            ->when($request->customer_id,
+                fn($q, $v) => $q->where('customer_id', $v))
             ->select(
-                'quotations.id',
-                'quotations.quotation_number',
-                'quotations.quotation_date',
-                'quotations.expiry_date',
-                'quotations.grand_total',
-                'quotations.status',
+                'quotations.*',
                 'customers.business_name'
             )
-
-            ->orderByDesc('quotations.quotation_date')
+            ->orderByDesc('quotation_date')
             ->paginate(10)
             ->withQueryString();
 
@@ -68,63 +53,63 @@ class QuotationController extends Controller
         ));
     }
 
+
     public function create(Request $request)
-{
-    $companyList = DB::table('companies')
-        ->where('status', 'ACTIVE')
-        ->orderBy('name')
-        ->get(['id', 'name']);
-
-    $companyId = $request->integer('company_id')
-        ?: optional($companyList->first())->id;
-
-    $company = null;
-    $customers = collect();
-    $templates = collect();
-    $quotationNumber = '';
-
-    if ($companyId) {
-
-        $company = DB::table('companies')
-            ->where('id', $companyId)
+    {
+        $companyList = DB::table('companies')
             ->where('status', 'ACTIVE')
-            ->first();
+            ->orderBy('name')->get(['id', 'name']);
 
-        if ($company) {
+        $companyId = $request->integer('company_id')
+            ?: optional($companyList->first())->id;
 
-            $customers = DB::table('customers')
-                ->where('company_id', $companyId)
+        $company = null;
+        $customers = collect();
+        $templates = collect();
+        $quotationNumber = '';
+
+        if ($companyId) {
+            $company = DB::table('companies')
+                ->where('id', $companyId)
                 ->where('status', 'ACTIVE')
-                ->orderBy('business_name')
-                ->get();
+                ->first();
 
-            $templates = DB::table('company_templates')
-                ->where('company_id', $companyId)
-                ->where('document_type', 'QUOTATION')
-                ->orderByDesc('is_default')
-                ->get();
+            if ($company) {
+                $customers = DB::table('customers')
+                    ->where('company_id', $companyId)
+                    ->where('status', 'ACTIVE')
+                    ->orderBy('business_name')
+                    ->get();
 
-            $quotationNumber =
-                rtrim($company->quotation_prefix, '-') . '-' .
-                now()->format('Y') . '-' .
-                str_pad(
-                    $company->quotation_next_number,
-                    4,
-                    '0',
-                    STR_PAD_LEFT
-                );
+                $templates = DB::table('company_templates')
+                    ->where('company_id', $companyId)
+                    ->where('document_type', 'QUOTATION')
+                    ->orderByDesc('is_default')
+                    ->orderBy('template_name')
+                    ->get();
+
+                $quotationNumber =
+                    rtrim($company->quotation_prefix, '-') . '-'
+                    . now()->format('Y') . '-'
+                    . str_pad(
+                        $company->quotation_next_number,
+                        4,
+                        '0',
+                        STR_PAD_LEFT
+                    );
+            }
         }
+
+        return view('quotations.create', compact(
+            'companyList',
+            'companyId',
+            'company',
+            'customers',
+            'templates',
+            'quotationNumber'
+        ));
     }
 
-    return view('quotations.create', compact(
-        'companyList',
-        'companyId',
-        'company',
-        'customers',
-        'templates',
-        'quotationNumber'
-    ));
-}
 
     public function store(Request $request)
     {
@@ -132,10 +117,8 @@ class QuotationController extends Controller
             'company_id' => 'required|exists:companies,id',
             'customer_id' => 'required|exists:customers,id',
             'template_id' => 'required|exists:company_templates,id',
-
             'quotation_date' => 'required|date',
-            'expiry_date' => 'required|date|after_or_equal:quotation_date',
-
+            'expiry_date' => 'nullable|date|after_or_equal:quotation_date',
             'reference' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
             'terms_conditions' => 'nullable|string',
@@ -143,25 +126,33 @@ class QuotationController extends Controller
             'items' => 'required|array|min:1',
             'items.*.item_name' => 'required|string|max:255',
             'items.*.description' => 'nullable|string',
-            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.quantity' => 'required|numeric|gt:0',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0|max:100',
             'items.*.tax' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($data) {
 
             $company = DB::table('companies')
                 ->where('id', $data['company_id'])
+                ->where('status', 'ACTIVE')
                 ->lockForUpdate()
                 ->first();
+
+            abort_if(!$company, 404);
 
             $customer = DB::table('customers')
                 ->where('id', $data['customer_id'])
                 ->where('company_id', $company->id)
+                ->where('status', 'ACTIVE')
                 ->first();
 
-            abort_if(!$customer, 422);
+            if (!$customer) {
+                throw ValidationException::withMessages([
+                    'customer_id' => 'Invalid customer.'
+                ]);
+            }
 
             $template = DB::table('company_templates')
                 ->where('id', $data['template_id'])
@@ -169,92 +160,75 @@ class QuotationController extends Controller
                 ->where('document_type', 'QUOTATION')
                 ->first();
 
-            abort_if(!$template, 422);
+            if (!$template) {
+                throw ValidationException::withMessages([
+                    'template_id' => 'Invalid quotation template.'
+                ]);
+            }
 
-            $quotationNumber =
-                rtrim($company->quotation_prefix, '-') . '-' .
-                now()->format('Y') . '-' .
-                str_pad($company->quotation_next_number, 4, '0', STR_PAD_LEFT);
+            $number = rtrim($company->quotation_prefix, '-') . '-'
+                . now()->format('Y') . '-'
+                . str_pad($company->quotation_next_number, 4, '0', STR_PAD_LEFT);
 
-            $subtotal = 0;
-            $discountTotal = 0;
-            $taxTotal = 0;
-            $grandTotal = 0;
-
+            $subtotal = $discountTotal = $taxTotal = 0;
             $items = [];
 
-            foreach ($data['items'] as $index => $item) {
+            foreach ($data['items'] as $i => $item) {
 
-                $quantity = (float) $item['quantity'];
-                $unitPrice = (float) $item['unit_price'];
-                $discountPercent = (float) ($item['discount'] ?? 0);
-                $taxPercent = (float) ($item['tax'] ?? 0);
+                $qty = (float)$item['quantity'];
+                $price = (float)$item['unit_price'];
+                $discount = (float)($item['discount'] ?? 0);
+                $tax = (float)($item['tax'] ?? 0);
 
-                $lineSubtotal = $quantity * $unitPrice;
-
-                $discountAmount =
-                    $lineSubtotal * ($discountPercent / 100);
-
-                $taxableAmount =
-                    $lineSubtotal - $discountAmount;
-
-                $taxAmount =
-                    $taxableAmount * ($taxPercent / 100);
-
-                $lineTotal =
-                    $taxableAmount + $taxAmount;
+                $lineSubtotal = round($qty * $price, 2);
+                $discountAmount = round($lineSubtotal * $discount / 100, 2);
+                $taxable = $lineSubtotal - $discountAmount;
+                $taxAmount = round($taxable * $tax / 100, 2);
+                $lineTotal = round($taxable + $taxAmount, 2);
 
                 $subtotal += $lineSubtotal;
                 $discountTotal += $discountAmount;
                 $taxTotal += $taxAmount;
-                $grandTotal += $lineTotal;
 
                 $items[] = [
-                    'sort_order' => $index + 1,
+                    'sort_order' => $i + 1,
                     'item_name' => $item['item_name'],
                     'description' => $item['description'] ?? null,
-                    'quantity' => $quantity,
-                    'unit' => 'unit',
-                    'unit_price' => $unitPrice,
-
-                    'discount_type' =>
-                        $discountPercent > 0
-                            ? 'PERCENTAGE'
-                            : 'NONE',
-
-                    'discount_value' => $discountPercent,
+                    'quantity' => $qty,
+                    'unit' => null,
+                    'unit_price' => $price,
+                    'discount_type' => $discount > 0 ? 'PERCENTAGE' : 'NONE',
+                    'discount_value' => $discount,
                     'discount_amount' => $discountAmount,
-
-                    'tax_percentage' => $taxPercent,
+                    'tax_percentage' => $tax,
                     'tax_amount' => $taxAmount,
                     'line_total' => $lineTotal,
                 ];
             }
 
+            $grandTotal = round(
+                $subtotal - $discountTotal + $taxTotal,
+                2
+            );
+
             $quotationId = DB::table('quotations')->insertGetId([
                 'company_id' => $company->id,
                 'customer_id' => $customer->id,
-
-                'quotation_number' => $quotationNumber,
+                'quotation_number' => $number,
                 'quotation_date' => $data['quotation_date'],
-                'expiry_date' => $data['expiry_date'],
-
+                'expiry_date' => $data['expiry_date'] ?? null,
                 'reference' => $data['reference'] ?? null,
 
                 'subtotal' => $subtotal,
-
-                'discount_type' => 'NONE',
-                'discount_value' => 0,
+                'discount_type' => $discountTotal > 0 ? 'FIXED' : 'NONE',
+                'discount_value' => $discountTotal,
                 'discount_amount' => $discountTotal,
-
                 'tax_percentage' => 0,
                 'tax_amount' => $taxTotal,
-
                 'additional_charges' => 0,
                 'grand_total' => $grandTotal,
 
                 'status' => 'DRAFT',
-
                 'notes' => $data['notes'] ?? null,
                 'terms_conditions' => $data['terms_conditions'] ?? null,
 
@@ -265,13 +239,11 @@ class QuotationController extends Controller
                 'template_snapshot' => json_encode($template),
 
                 'created_by' => auth()->id(),
-
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
             foreach ($items as $item) {
-
                 DB::table('quotation_items')->insert([
                     'quotation_id' => $quotationId,
                     ...$item,
@@ -282,44 +254,173 @@ class QuotationController extends Controller
 
             DB::table('companies')
                 ->where('id', $company->id)
-                ->increment('quotation_next_number');
-        });
+                ->update([
+                    'quotation_next_number' =>
+                        $company->quotation_next_number + 1
+                ]);
 
-        return redirect()
-            ->route('quotations.index', [
-                'company_id' => $data['company_id']
-            ])
-            ->with('success', 'Quotation created successfully.');
+            return redirect()
+                ->route('quotations.show', $quotationId)
+                ->with('success', 'Quotation created successfully.');
+        });
     }
 
+
     public function show($id)
+    {
+        $quotation = DB::table('quotations')
+            ->leftJoin('users', 'quotations.created_by', '=', 'users.id')
+            ->where('quotations.id', $id)
+            ->select(
+                'quotations.*',
+                'users.name as created_by_name'
+            )
+            ->first();
+
+        abort_if(!$quotation, 404);
+
+        $company = DB::table('companies')
+            ->where('id', $quotation->company_id)
+            ->first();
+
+        $customer = DB::table('customers')
+            ->where('id', $quotation->customer_id)
+            ->first();
+
+        $items = DB::table('quotation_items')
+            ->where('quotation_id', $id)
+            ->orderBy('sort_order')
+            ->get();
+
+        $template = DB::table('company_templates')
+            ->where('id', $quotation->template_id)
+            ->first();
+
+        return view('quotations.show', compact(
+            'quotation',
+            'company',
+            'customer',
+            'items',
+            'template'
+        ));
+    }
+
+    public function preview(Request $request)
+{
+    $data = $request->validate([
+        'company_id' => 'required',
+        'customer_id' => 'required',
+        'template_id' => 'required',
+        'quotation_date' => 'required|date',
+        'expiry_date' => 'nullable|date',
+        'items' => 'required|array|min:1',
+    ]);
+
+    $company = DB::table('companies')
+        ->where('id', $data['company_id'])
+        ->first();
+
+    $customer = DB::table('customers')
+        ->where('id', $data['customer_id'])
+        ->first();
+
+    $template = DB::table('company_templates')
+        ->where('id', $data['template_id'])
+        ->where('company_id', $company->id)
+        ->where('document_type', 'QUOTATION')
+        ->first();
+
+    abort_if(!$company || !$customer || !$template, 404);
+
+    $subtotal = $discountTotal = $taxTotal = 0;
+    $items = [];
+
+    foreach ($request->items as $item) {
+        $qty = (float) $item['quantity'];
+        $price = (float) $item['unit_price'];
+        $discount = (float) ($item['discount'] ?? 0);
+        $tax = (float) ($item['tax'] ?? 0);
+
+        $base = $qty * $price;
+        $discountAmount = $base * $discount / 100;
+        $taxable = $base - $discountAmount;
+        $taxAmount = $taxable * $tax / 100;
+
+        $subtotal += $base;
+        $discountTotal += $discountAmount;
+        $taxTotal += $taxAmount;
+
+        $items[] = (object) [
+            'item_name' => $item['item_name'],
+            'description' => $item['description'] ?? null,
+            'quantity' => $qty,
+            'unit_price' => $price,
+            'line_total' => $taxable + $taxAmount,
+        ];
+    }
+
+    $quotation = (object) [
+        'quotation_number' => 'PREVIEW',
+        'quotation_date' => $request->quotation_date,
+        'expiry_date' => $request->expiry_date,
+        'reference' => $request->reference,
+        'notes' => $request->notes,
+        'terms_conditions' => $request->terms_conditions,
+        'subtotal' => $subtotal,
+        'discount_amount' => $discountTotal,
+        'tax_amount' => $taxTotal,
+        'grand_total' => $subtotal - $discountTotal + $taxTotal,
+    ];
+
+    return view('quotations.preview', compact(
+        'company',
+        'customer',
+        'template',
+        'quotation',
+        'items'
+    ));
+}
+
+public function downloadPdf($id)
 {
     $quotation = DB::table('quotations')
-        ->leftJoin('users', 'quotations.created_by', '=', 'users.id')
-        ->where('quotations.id', $id)
-        ->select(
-            'quotations.*',
-            'users.name as created_by_name'
-        )
+        ->where('id', $id)
         ->first();
 
     abort_if(!$quotation, 404);
+
+    $company = DB::table('companies')
+        ->where('id', $quotation->company_id)
+        ->first();
+
+    $customer = DB::table('customers')
+        ->where('id', $quotation->customer_id)
+        ->first();
 
     $items = DB::table('quotation_items')
         ->where('quotation_id', $id)
         ->orderBy('sort_order')
         ->get();
 
-    $company = json_decode($quotation->company_snapshot);
-    $customer = json_decode($quotation->customer_snapshot);
-    $template = json_decode($quotation->template_snapshot);
+    $template = DB::table('company_templates')
+        ->where('id', $quotation->template_id)
+        ->first();
 
-    return view('quotations.show', compact(
+    $bank = DB::table('company_bank_details')
+        ->where('company_id', $quotation->company_id)
+        ->first();
+
+    $pdf = Pdf::loadView('quotations.pdf', compact(
         'quotation',
-        'items',
         'company',
         'customer',
-        'template'
+        'items',
+        'template',
+        'bank'
     ));
+
+    return $pdf->download(
+        $quotation->quotation_number . '.pdf'
+    );
 }
 }

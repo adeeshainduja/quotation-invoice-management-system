@@ -129,6 +129,11 @@ Route::middleware('auth')->group(function () {
     )
         ->name('quotations.store');
 
+    Route::post('/quotations/preview', [QuotationController::class, 'preview'])
+        ->name('quotations.preview');
+
+    Route::get('/quotations/{id}/pdf', [QuotationController::class, 'downloadPdf'])
+        ->name('quotations.pdf');
 
     Route::get(
         '/quotations/{id}',

@@ -688,6 +688,16 @@
 
                 <button
                     type="submit"
+                    formaction="{{ route('quotations.preview') }}"
+                    class="cancel-btn"
+                    @disabled(!$company)
+                >
+                    <i data-lucide="eye"></i>
+                    Preview
+                </button>
+
+                <button
+                    type="submit"
                     class="save-btn"
                     @disabled(!$company)
                 >

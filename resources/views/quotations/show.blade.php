@@ -405,9 +405,12 @@
                     Clone
                 </button>
 
-                <button type="button">
+                <button
+                    type="button"
+                    onclick="window.location.href='{{ route('quotations.pdf', $quotation->id) }}'"
+                >
                     <i data-lucide="download"></i>
-                    PDF
+                    Export PDF
                 </button>
 
                 @if($quotation->status === 'DRAFT')
