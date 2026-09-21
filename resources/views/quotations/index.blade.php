@@ -15,20 +15,32 @@
 
 <body>
 
-{{-- SHARED SIDEBAR --}}
 @include('partials.sidebar')
+
+@php
+    $quotationStats = array_merge([
+        'total' => 0,
+        'draft' => 0,
+        'sent' => 0,
+        'accepted' => 0,
+        'rejected' => 0,
+        'expired' => 0,
+        'converted' => 0,
+    ], $stats ?? []);
+@endphp
 
 
 <div class="page">
 
-    {{-- TOP BAR --}}
     <header class="topbar">
 
-        <form method="GET" action="{{ route('quotations.index') }}">
-
+        <form
+            method="GET"
+            action="{{ route('quotations.index') }}"
+        >
             <select
-                class="company-select"
                 name="company_id"
+                class="company-select"
                 onchange="this.form.submit()"
             >
 
@@ -50,7 +62,6 @@
                 @endforelse
 
             </select>
-
         </form>
 
 
@@ -82,7 +93,6 @@
 
     <main>
 
-        {{-- BREADCRUMB --}}
         <div class="breadcrumb">
 
             <a href="{{ route('dashboard') }}">
@@ -96,7 +106,6 @@
         </div>
 
 
-        {{-- PAGE HEADER --}}
         <div class="quotation-heading">
 
             <div>
@@ -106,45 +115,196 @@
 
 
             <a
-                href="{{ $companyId
-                    ? route('quotations.create', ['company_id' => $companyId])
-                    : route('quotations.create') }}"
+                href="{{ route('quotations.create', [
+                    'company_id' => $companyId
+                ]) }}"
                 class="new-quotation"
             >
-
                 <i data-lucide="plus"></i>
-
                 New Quotation
-
             </a>
 
         </div>
 
 
-        {{-- SUCCESS MESSAGE --}}
-        @if(session('success'))
+        {{-- QUOTATION SUMMARY --}}
+        <section class="quotation-summary">
 
-            <div class="alert-success">
-                {{ session('success') }}
-            </div>
+            <a
+                href="{{ route('quotations.index', [
+                    'company_id' => $companyId
+                ]) }}"
+                class="summary-card"
+            >
 
-        @endif
+                <div class="summary-icon blue">
+                    <i data-lucide="file-text"></i>
+                </div>
+
+                <div>
+                    <span>All Quotations</span>
+
+                    <strong>
+                        {{ $quotationStats['total'] }}
+                    </strong>
+
+                    <small>
+                        Total quotations
+                    </small>
+                </div>
+
+            </a>
 
 
-        {{-- FILTERS --}}
+            <a
+                href="{{ route('quotations.index', [
+                    'company_id' => $companyId,
+                    'status' => 'SENT'
+                ]) }}"
+                class="summary-card"
+            >
+
+                <div class="summary-icon purple">
+                    <i data-lucide="send"></i>
+                </div>
+
+                <div>
+                    <span>Pending Response</span>
+
+                    <strong>
+                        {{ $quotationStats['sent'] }}
+                    </strong>
+
+                    <small>
+                        Sent to customers
+                    </small>
+                </div>
+
+            </a>
+
+
+            <a
+                href="{{ route('quotations.index', [
+                    'company_id' => $companyId,
+                    'status' => 'ACCEPTED'
+                ]) }}"
+                class="summary-card"
+            >
+
+                <div class="summary-icon green">
+                    <i data-lucide="circle-check"></i>
+                </div>
+
+                <div>
+                    <span>Accepted</span>
+
+                    <strong>
+                        {{ $quotationStats['accepted'] }}
+                    </strong>
+
+                    <small>
+                        Approved quotations
+                    </small>
+                </div>
+
+            </a>
+
+
+            <a
+                href="{{ route('quotations.index', [
+                    'company_id' => $companyId,
+                    'status' => 'REJECTED'
+                ]) }}"
+                class="summary-card"
+            >
+
+                <div class="summary-icon red">
+                    <i data-lucide="circle-x"></i>
+                </div>
+
+                <div>
+                    <span>Rejected</span>
+
+                    <strong>
+                        {{ $quotationStats['rejected'] }}
+                    </strong>
+
+                    <small>
+                        Declined quotations
+                    </small>
+                </div>
+
+            </a>
+
+
+            <a
+                href="{{ route('quotations.index', [
+                    'company_id' => $companyId,
+                    'status' => 'EXPIRED'
+                ]) }}"
+                class="summary-card"
+            >
+
+                <div class="summary-icon orange">
+                    <i data-lucide="clock-3"></i>
+                </div>
+
+                <div>
+                    <span>Expired</span>
+
+                    <strong>
+                        {{ $quotationStats['expired'] }}
+                    </strong>
+
+                    <small>
+                        No longer valid
+                    </small>
+                </div>
+
+            </a>
+
+
+            <a
+                href="{{ route('quotations.index', [
+                    'company_id' => $companyId,
+                    'status' => 'CONVERTED'
+                ]) }}"
+                class="summary-card"
+            >
+
+                <div class="summary-icon violet">
+                    <i data-lucide="receipt-text"></i>
+                </div>
+
+                <div>
+                    <span>Converted</span>
+
+                    <strong>
+                        {{ $quotationStats['converted'] }}
+                    </strong>
+
+                    <small>
+                        Invoice created
+                    </small>
+                </div>
+
+            </a>
+
+        </section>
+
+
+        {{-- FILTER --}}
         <form
             method="GET"
             action="{{ route('quotations.index') }}"
             class="quotation-filter"
         >
 
-            @if($companyId)
-                <input
-                    type="hidden"
-                    name="company_id"
-                    value="{{ $companyId }}"
-                >
-            @endif
+            <input
+                type="hidden"
+                name="company_id"
+                value="{{ $companyId }}"
+            >
 
 
             <div class="search-box">
@@ -227,15 +387,18 @@
             </div>
 
 
-            <button type="submit" class="filter-button">
+            <button
+                type="submit"
+                class="filter-button"
+            >
                 Search
             </button>
 
 
             <a
-                href="{{ $companyId
-                    ? route('quotations.index', ['company_id' => $companyId])
-                    : route('quotations.index') }}"
+                href="{{ route('quotations.index', [
+                    'company_id' => $companyId
+                ]) }}"
                 class="clear-button"
             >
                 Clear Filters
@@ -259,7 +422,7 @@
                         <th>Date</th>
                         <th>Customer</th>
                         <th>Valid Until</th>
-                        <th>Amount (LKR)</th>
+                        <th>Amount ({{ $currency ?? 'LKR' }})</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -300,21 +463,29 @@
                                 {{ $quotation->expiry_date
                                     ? \Carbon\Carbon::parse(
                                         $quotation->expiry_date
-                                      )->format('Y-m-d')
-                                    : '-' }}
+                                    )->format('Y-m-d')
+                                    : '-'
+                                }}
 
                             </td>
 
 
                             <td>
-                                {{ number_format($quotation->grand_total, 2) }}
+
+                                {{ number_format(
+                                    $quotation->grand_total,
+                                    2
+                                ) }}
+
                             </td>
 
 
                             <td>
 
                                 <span
-                                    class="quotation-status {{ strtolower($quotation->status) }}"
+                                    class="quotation-status {{ strtolower(
+                                        $quotation->status
+                                    ) }}"
                                 >
                                     {{ $quotation->status }}
                                 </span>
@@ -326,38 +497,22 @@
 
                                 <div class="actions">
 
-                                    {{-- VIEW --}}
                                     <a
                                         href="{{ route(
                                             'quotations.show',
                                             $quotation->id
                                         ) }}"
                                     >
-
                                         <i data-lucide="eye"></i>
-
                                         View
-
                                     </a>
 
 
-                                    {{-- EDIT --}}
-                                    @if(
-                                        Route::has('quotations.edit')
-                                        && $quotation->status !== 'CONVERTED'
-                                    )
+                                    @if($quotation->status !== 'CONVERTED')
 
-                                        <a
-                                            href="{{ route(
-                                                'quotations.edit',
-                                                $quotation->id
-                                            ) }}"
-                                        >
-
+                                        <a href="#">
                                             <i data-lucide="pencil"></i>
-
                                             Edit
-
                                         </a>
 
                                     @endif
@@ -378,12 +533,14 @@
 
                         <tr>
 
-                            <td colspan="8" class="empty">
+                            <td
+                                colspan="8"
+                                class="empty"
+                            >
 
                                 @if(!$companyId)
 
-                                    No company selected.
-                                    Create a company first.
+                                    No company selected. Create a company first.
 
                                 @else
 
@@ -404,20 +561,16 @@
             </div>
 
 
-            {{-- PAGINATION --}}
             <div class="table-footer">
 
                 <span>
 
                     Showing
                     {{ $quotations->firstItem() ?? 0 }}
-
                     to
                     {{ $quotations->lastItem() ?? 0 }}
-
                     of
                     {{ $quotations->total() }}
-
                     quotations
 
                 </span>
