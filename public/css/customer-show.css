@@ -1,0 +1,375 @@
+.company-box {
+    min-width: 280px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 16px;
+    border: 1px solid #d7e0eb;
+    border-radius: 7px;
+    background: white;
+    font-size: 14px;
+}
+
+.company-box svg {
+    width: 20px;
+}
+
+.breadcrumb {
+    display: flex;
+    gap: 11px;
+    margin-bottom: 14px;
+    color: #62718c;
+    font-size: 14px;
+}
+
+.breadcrumb a {
+    color: #42618b;
+    text-decoration: none;
+}
+
+.details-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+}
+
+.details-heading h1 {
+    margin: 0;
+    font-size: 30px;
+}
+
+.details-heading p {
+    margin: 6px 0 0;
+    color: #64738e;
+}
+
+.heading-actions {
+    display: flex;
+    gap: 13px;
+}
+
+.heading-actions a,
+.heading-actions button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid #d4deea;
+    border-radius: 7px;
+    background: white;
+    color: #10274e;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.heading-actions svg {
+    width: 18px;
+}
+
+.heading-actions .delete-btn {
+    border-color: #ef3340;
+    background: #ef3340;
+    color: white;
+    cursor: pointer;
+}
+
+.customer-summary {
+    display: grid;
+    grid-template-columns: 1.7fr .65fr .65fr .8fr;
+    gap: 14px;
+    padding: 18px;
+    background: white;
+    border: 1px solid #e1e8f0;
+    border-radius: 9px;
+}
+
+.customer-profile {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+
+.customer-avatar {
+    width: 92px;
+    height: 92px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #accbff, #89adf4);
+    color: #1164dc;
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.customer-profile h2 {
+    margin: 0;
+    font-size: 25px;
+}
+
+.customer-profile p {
+    margin: 5px 0 10px;
+    font-size: 16px;
+}
+
+.status {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status.active {
+    background: #d9f6e6;
+    color: #148651;
+}
+
+.status.inactive {
+    background: #ffe2e4;
+    color: #d92f38;
+}
+
+.summary-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid #e2e9f1;
+    border-radius: 8px;
+    background: #f8fbff;
+}
+
+.summary-icon {
+    width: 47px;
+    height: 47px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: 11px;
+    background: #e3efff;
+    color: #1673e5;
+}
+
+.summary-icon svg {
+    width: 23px;
+}
+
+.summary-card p {
+    margin: 0 0 7px;
+    color: #536786;
+    font-size: 13px;
+}
+
+.summary-card strong {
+    font-size: 20px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 17px;
+    margin-top: 16px;
+}
+
+.info-card {
+    padding: 17px 22px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+}
+
+.info-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 6px;
+    padding-bottom: 11px;
+    border-bottom: 1px solid #e3e9f0;
+    font-size: 17px;
+}
+
+.info-card h3 svg {
+    width: 21px;
+    color: #597296;
+}
+
+.info-row {
+    display: grid;
+    grid-template-columns: 190px 1fr;
+    padding: 10px 0;
+    border-bottom: 1px solid #e7edf3;
+}
+
+.info-row:last-child {
+    border-bottom: 0;
+}
+
+.info-row span {
+    color: #526888;
+}
+
+.info-row strong {
+    font-weight: 500;
+}
+
+.info-card label {
+    display: block;
+    margin: 12px 0 8px;
+    font-weight: 500;
+}
+
+.notes {
+    min-height: 70px;
+    padding: 13px 16px;
+    border: 1px solid #d9e2ed;
+    border-radius: 7px;
+    background: #fafcff;
+    line-height: 1.5;
+}
+
+.history-card {
+    margin-top: 17px;
+    padding: 0 16px 16px;
+    background: white;
+    border: 1px solid #e1e8f0;
+    border-radius: 9px;
+}
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.tabs button {
+    padding: 15px 18px;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    color: #435a7e;
+    cursor: pointer;
+}
+
+.tabs button.active {
+    border-bottom-color: #1674ea;
+    color: #1674ea;
+    font-weight: 600;
+}
+
+.history-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 0 10px;
+}
+
+.history-title h3 {
+    margin: 0;
+}
+
+.history-title a {
+    color: #1674ea;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.history-card table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.history-card th {
+    padding: 11px 14px;
+    text-align: left;
+    background: #f1f5f9;
+}
+
+.history-card td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e4eaf1;
+}
+
+.quote-status {
+    display: inline-block;
+    min-width: 85px;
+    padding: 5px 10px;
+    text-align: center;
+    border-radius: 18px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.quote-status.sent {
+    background: #ddecff;
+    color: #126be0;
+}
+
+.quote-status.accepted {
+    background: #d8f5e5;
+    color: #148754;
+}
+
+.quote-status.rejected,
+.quote-status.expired {
+    background: #ffe1e3;
+    color: #e6323b;
+}
+
+.quote-status.draft {
+    background: #fff0ce;
+    color: #b77a00;
+}
+
+.view-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 13px;
+    border: 1px solid #d9e3ed;
+    border-radius: 6px;
+    color: #1066d5;
+    text-decoration: none;
+}
+
+.view-btn svg {
+    width: 17px;
+}
+
+.empty {
+    padding: 30px !important;
+    text-align: center;
+    color: #7a879c;
+}
+
+@media (max-width: 1100px) {
+
+    .customer-summary {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+
+    .details-heading,
+    .heading-actions {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .customer-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .info-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+    }
+}

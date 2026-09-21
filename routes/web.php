@@ -21,26 +21,22 @@ Route::middleware('guest')->group(function () {
         ->name('register.submit');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard.index');
-})->middleware('auth')->name('dashboard');
 
-Route::post('/logout', [AuthController::class, 'logout'])
-    ->middleware('auth')
-    ->name('logout');
+Route::middleware('auth')->group(function () {
 
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware('auth')
-    ->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
 
-Route::get('/companies', [CompanyController::class, 'index'])
-    ->middleware('auth')
-    ->name('companies.index');
+    Route::get('/companies', [CompanyController::class, 'index'])
+        ->name('companies.index');
 
-Route::get('/customers', [CustomerController::class, 'index'])
-    ->middleware('auth')
-    ->name('customers.index');
+    Route::get('/customers', [CustomerController::class, 'index'])
+        ->name('customers.index');
 
-Route::get('/customers/{id}', [CustomerController::class, 'show'])
-    ->middleware('auth')
-    ->name('customers.show');
+    Route::get('/customers/{id}', [CustomerController::class, 'show'])
+        ->name('customers.show');
+
+    Route::post('/logout', [AuthController::class, 'logout'])
+        ->name('logout');
+
+});
