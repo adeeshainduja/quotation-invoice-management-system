@@ -305,7 +305,10 @@
 
                                     <option
                                         value="{{ $template->id }}"
-                                        {{ old('template_id') == $template->id ? 'selected' : '' }}
+                                        {{ old(
+                                            'template_id',
+                                            optional($templates->firstWhere('is_default', 1))->id
+                                        ) == $template->id ? 'selected' : '' }}
                                     >
                                         {{ $template->template_name }}
                                     </option>
@@ -689,8 +692,9 @@
                 <button
                     type="submit"
                     formaction="{{ route('quotations.preview') }}"
-                    class="cancel-btn"
-                    @disabled(!$company)
+                    formmethod="POST"
+                    formtarget="_blank"
+                    class="save-btn"
                 >
                     <i data-lucide="eye"></i>
                     Preview
@@ -1068,6 +1072,27 @@
             updateCustomer
         );
 
+    }
+
+
+    function previewQuotation()
+    {
+        const form = document.getElementById('quotationForm');
+
+        if (!form.reportValidity()) {
+            return;
+        }
+
+        const originalAction = form.action;
+        const originalTarget = form.target;
+
+        form.action = @json(route('quotations.preview'));
+        form.target = '_blank';
+
+        form.submit();
+
+        form.action = originalAction;
+        form.target = originalTarget;
     }
 
 
