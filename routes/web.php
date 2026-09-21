@@ -7,6 +7,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PaymentController;
 
 Route::middleware('guest')->group(function () {
 
@@ -67,9 +68,23 @@ Route::middleware('auth')->group(function () {
 
 
     Route::get('/invoices', [InvoiceController::class, 'index'])
-    ->name('invoices.index');
+        ->name('invoices.index');
+
+    Route::get('/invoices/create', [InvoiceController::class, 'create'])
+        ->name('invoices.create');
+
+    Route::post('/invoices', [InvoiceController::class, 'store'])
+        ->name('invoices.store');
 
     
+    Route::get('/payments', [PaymentController::class, 'index'])
+        ->name('payments.index');
+
+    Route::get('/payments/create', [PaymentController::class, 'create'])
+        ->name('payments.create');
+
+    Route::post('/payments', [PaymentController::class, 'store'])
+        ->name('payments.store');
 
 
     Route::post('/logout', [AuthController::class, 'logout'])
