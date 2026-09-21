@@ -2,20 +2,26 @@
 
 namespace App\Models;
 
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'role',
+        'status',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
     protected function casts(): array
     {
@@ -25,23 +31,24 @@ class User extends Authenticatable
         ];
     }
 
-    public function quotations(): HasMany
+    public function permissions()
     {
-        return $this->hasMany(Quotation::class, 'created_by');
+        return $this->belongsToMany(Permission::class);
     }
 
-    public function invoices(): HasMany
+    public function isAdmin(): bool
     {
-        return $this->hasMany(Invoice::class, 'created_by');
+        return $this->role === 'ADMIN';
     }
 
-    public function payments(): HasMany
+    public function hasPermission(string $permission): bool
     {
-        return $this->hasMany(Payment::class, 'created_by');
-    }
+        if ($this->isAdmin()) {
+            return true;
+        }
 
-    public function activityLogs(): HasMany
-    {
-        return $this->hasMany(ActivityLog::class);
+        return $this->permissions()
+            ->where('key', $permission)
+            ->exists();
     }
 }
