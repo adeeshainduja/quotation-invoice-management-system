@@ -1,0 +1,47 @@
+.create-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.create-card {
+    padding: 25px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #334155;
+    transition: .2s;
+}
+
+.create-card:hover {
+    border-color: #1474e8;
+    transform: translateY(-2px);
+}
+
+.create-card svg {
+    width: 26px;
+    color: #1474e8;
+    margin-bottom: 15px;
+}
+
+.create-card strong,
+.create-card span {
+    display: block;
+}
+
+.create-card strong {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.create-card span {
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+@media(max-width:800px) {
+    .create-grid {
+        grid-template-columns: 1fr;
+    }
+}

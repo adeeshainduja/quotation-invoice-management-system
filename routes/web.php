@@ -54,7 +54,9 @@ Route::middleware('auth')->group(function () {
     )
         ->name('dashboard');
 
-
+    Route::get('/create-new', function () {
+        return view('dashboard.create-new');
+    })->name('create-new');
 
     Route::get(
         '/companies',
