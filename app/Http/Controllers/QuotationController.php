@@ -75,19 +75,23 @@ class QuotationController extends Controller
         ->orderBy('name')
         ->get(['id', 'name']);
 
-    $companyId = $request->integer('company_id') ?: optional($companyList->first())->id;
+    $companyId = $request->integer('company_id')
+        ?: optional($companyList->first())->id;
+
     $company = null;
     $customers = collect();
     $templates = collect();
     $quotationNumber = '';
 
     if ($companyId) {
+
         $company = DB::table('companies')
             ->where('id', $companyId)
             ->where('status', 'ACTIVE')
             ->first();
 
         if ($company) {
+
             $customers = DB::table('customers')
                 ->where('company_id', $companyId)
                 ->where('status', 'ACTIVE')
@@ -100,7 +104,15 @@ class QuotationController extends Controller
                 ->orderByDesc('is_default')
                 ->get();
 
-            $quotationNumber = rtrim($company->quotation_prefix, '-') . '-' . now()->format('Y') . '-' . str_pad($company->quotation_next_number, 4, '0', STR_PAD_LEFT);
+            $quotationNumber =
+                rtrim($company->quotation_prefix, '-') . '-' .
+                now()->format('Y') . '-' .
+                str_pad(
+                    $company->quotation_next_number,
+                    4,
+                    '0',
+                    STR_PAD_LEFT
+                );
         }
     }
 
@@ -113,7 +125,6 @@ class QuotationController extends Controller
         'quotationNumber'
     ));
 }
-
 
     public function store(Request $request)
     {
@@ -280,4 +291,35 @@ class QuotationController extends Controller
             ])
             ->with('success', 'Quotation created successfully.');
     }
+
+    public function show($id)
+{
+    $quotation = DB::table('quotations')
+        ->leftJoin('users', 'quotations.created_by', '=', 'users.id')
+        ->where('quotations.id', $id)
+        ->select(
+            'quotations.*',
+            'users.name as created_by_name'
+        )
+        ->first();
+
+    abort_if(!$quotation, 404);
+
+    $items = DB::table('quotation_items')
+        ->where('quotation_id', $id)
+        ->orderBy('sort_order')
+        ->get();
+
+    $company = json_decode($quotation->company_snapshot);
+    $customer = json_decode($quotation->customer_snapshot);
+    $template = json_decode($quotation->template_snapshot);
+
+    return view('quotations.show', compact(
+        'quotation',
+        'items',
+        'company',
+        'customer',
+        'template'
+    ));
+}
 }

@@ -58,6 +58,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/quotations/create', [QuotationController::class, 'create'])
         ->name('quotations.create');
 
+    Route::get('/quotations/{id}', [QuotationController::class, 'show'])
+        ->name('quotations.show');
+
     Route::post('/quotations', [QuotationController::class, 'store'])
         ->name('quotations.store');
 

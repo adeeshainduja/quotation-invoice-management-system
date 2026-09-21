@@ -15,71 +15,13 @@
 
 <body>
 
-<aside class="sidebar">
-
-    <div class="logo">
-        <i data-lucide="file-text"></i>
-
-        <div>
-            <strong>Quotation & Invoice</strong>
-            <small>Management System</small>
-        </div>
-    </div>
-
-    <nav>
-
-        <a href="{{ route('dashboard', ['company_id' => $companyId]) }}">
-            <i data-lucide="house"></i>
-            Dashboard
-        </a>
-
-        <a href="{{ route('companies.index') }}">
-            <i data-lucide="building-2"></i>
-            Companies
-        </a>
-
-        <a href="{{ route('customers.index', ['company_id' => $companyId]) }}">
-            <i data-lucide="users"></i>
-            Customers
-        </a>
-
-        <a href="{{ route('quotations.index') }}" class="active">
-            <i data-lucide="file-text"></i>
-            Quotations
-        </a>
-
-        <a href="#">
-            <i data-lucide="receipt-text"></i>
-            Invoices
-        </a>
-
-        <a href="#">
-            <i data-lucide="wallet"></i>
-            Payments
-        </a>
-
-        <a href="#">
-            <i data-lucide="files"></i>
-            Templates
-        </a>
-
-        <a href="#">
-            <i data-lucide="bar-chart-3"></i>
-            Reports
-        </a>
-
-        <a href="#">
-            <i data-lucide="settings"></i>
-            Settings
-        </a>
-
-    </nav>
-
-</aside>
+{{-- SHARED SIDEBAR --}}
+@include('partials.sidebar')
 
 
 <div class="page">
 
+    {{-- TOP BAR --}}
     <header class="topbar">
 
         <form method="GET" action="{{ route('quotations.index') }}">
@@ -90,7 +32,7 @@
                 onchange="this.form.submit()"
             >
 
-                @foreach($companyList as $company)
+                @forelse($companyList as $company)
 
                     <option
                         value="{{ $company->id }}"
@@ -99,7 +41,13 @@
                         {{ $company->name }}
                     </option>
 
-                @endforeach
+                @empty
+
+                    <option value="">
+                        No Companies
+                    </option>
+
+                @endforelse
 
             </select>
 
@@ -112,6 +60,7 @@
                 <i data-lucide="bell"></i>
                 <span></span>
             </div>
+
 
             <div class="user">
 
@@ -133,13 +82,21 @@
 
     <main>
 
+        {{-- BREADCRUMB --}}
         <div class="breadcrumb">
-            <a href="{{ route('dashboard') }}">Home</a>
+
+            <a href="{{ route('dashboard') }}">
+                Home
+            </a>
+
             <span>›</span>
+
             Quotations
+
         </div>
 
 
+        {{-- PAGE HEADER --}}
         <div class="quotation-heading">
 
             <div>
@@ -147,28 +104,47 @@
                 <p>Create and manage your quotations</p>
             </div>
 
+
             <a
-                href="{{ route('quotations.create') }}"
+                href="{{ $companyId
+                    ? route('quotations.create', ['company_id' => $companyId])
+                    : route('quotations.create') }}"
                 class="new-quotation"
             >
+
                 <i data-lucide="plus"></i>
+
                 New Quotation
+
             </a>
 
         </div>
 
 
+        {{-- SUCCESS MESSAGE --}}
+        @if(session('success'))
+
+            <div class="alert-success">
+                {{ session('success') }}
+            </div>
+
+        @endif
+
+
+        {{-- FILTERS --}}
         <form
             method="GET"
             action="{{ route('quotations.index') }}"
             class="quotation-filter"
         >
 
-            <input
-                type="hidden"
-                name="company_id"
-                value="{{ $companyId }}"
-            >
+            @if($companyId)
+                <input
+                    type="hidden"
+                    name="company_id"
+                    value="{{ $companyId }}"
+                >
+            @endif
 
 
             <div class="search-box">
@@ -187,7 +163,9 @@
 
             <select name="status">
 
-                <option value="">All Status</option>
+                <option value="">
+                    All Status
+                </option>
 
                 @foreach([
                     'DRAFT',
@@ -212,7 +190,9 @@
 
             <select name="customer_id">
 
-                <option value="">All Customers</option>
+                <option value="">
+                    All Customers
+                </option>
 
                 @foreach($customerList as $customer)
 
@@ -253,8 +233,10 @@
 
 
             <a
+                href="{{ $companyId
+                    ? route('quotations.index', ['company_id' => $companyId])
+                    : route('quotations.index') }}"
                 class="clear-button"
-                href="{{ route('quotations.index', ['company_id' => $companyId]) }}"
             >
                 Clear Filters
             </a>
@@ -262,6 +244,7 @@
         </form>
 
 
+        {{-- TABLE --}}
         <section class="quotation-table">
 
             <div class="table-wrap">
@@ -294,53 +277,91 @@
                                 {{ $quotations->firstItem() + $loop->index }}
                             </td>
 
+
                             <td>
                                 {{ $quotation->quotation_number }}
                             </td>
 
+
                             <td>
-                                {{ \Carbon\Carbon::parse($quotation->quotation_date)->format('Y-m-d') }}
+                                {{ \Carbon\Carbon::parse(
+                                    $quotation->quotation_date
+                                )->format('Y-m-d') }}
                             </td>
+
 
                             <td>
                                 {{ $quotation->business_name }}
                             </td>
 
+
                             <td>
+
                                 {{ $quotation->expiry_date
-                                    ? \Carbon\Carbon::parse($quotation->expiry_date)->format('Y-m-d')
+                                    ? \Carbon\Carbon::parse(
+                                        $quotation->expiry_date
+                                      )->format('Y-m-d')
                                     : '-' }}
+
                             </td>
+
 
                             <td>
                                 {{ number_format($quotation->grand_total, 2) }}
                             </td>
 
+
                             <td>
 
-                                <span class="quotation-status {{ strtolower($quotation->status) }}">
+                                <span
+                                    class="quotation-status {{ strtolower($quotation->status) }}"
+                                >
                                     {{ $quotation->status }}
                                 </span>
 
                             </td>
 
+
                             <td>
 
                                 <div class="actions">
 
-                                    <a href="#">
+                                    {{-- VIEW --}}
+                                    <a
+                                        href="{{ route(
+                                            'quotations.show',
+                                            $quotation->id
+                                        ) }}"
+                                    >
+
                                         <i data-lucide="eye"></i>
+
                                         View
+
                                     </a>
 
-                                    @if(!in_array($quotation->status, ['CONVERTED']))
 
-                                        <a href="#">
+                                    {{-- EDIT --}}
+                                    @if(
+                                        Route::has('quotations.edit')
+                                        && $quotation->status !== 'CONVERTED'
+                                    )
+
+                                        <a
+                                            href="{{ route(
+                                                'quotations.edit',
+                                                $quotation->id
+                                            ) }}"
+                                        >
+
                                             <i data-lucide="pencil"></i>
+
                                             Edit
+
                                         </a>
 
                                     @endif
+
 
                                     <button type="button">
                                         <i data-lucide="more-horizontal"></i>
@@ -352,12 +373,26 @@
 
                         </tr>
 
+
                     @empty
 
                         <tr>
+
                             <td colspan="8" class="empty">
-                                No quotations found.
+
+                                @if(!$companyId)
+
+                                    No company selected.
+                                    Create a company first.
+
+                                @else
+
+                                    No quotations found.
+
+                                @endif
+
                             </td>
+
                         </tr>
 
                     @endforelse
@@ -369,17 +404,24 @@
             </div>
 
 
+            {{-- PAGINATION --}}
             <div class="table-footer">
 
                 <span>
+
                     Showing
                     {{ $quotations->firstItem() ?? 0 }}
+
                     to
                     {{ $quotations->lastItem() ?? 0 }}
+
                     of
                     {{ $quotations->total() }}
+
                     quotations
+
                 </span>
+
 
                 {{ $quotations->links() }}
 

@@ -490,3 +490,12 @@ td {
         padding: 15px;
     }
 }
+
+.sidebar nav a.disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.sidebar nav a.disabled:hover {
+    background: transparent;
+}

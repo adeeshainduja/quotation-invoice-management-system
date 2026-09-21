@@ -14,7 +14,7 @@ class CompanyController extends Controller
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                       ->orWhere('registration_number', 'like', "%{$search}%")
-                      ->orWhere('tin', 'like', "%{$search}%");
+                      ->orWhere('tin_number', 'like', "%{$search}%");
                 });
             })
             ->when($request->status, function ($query, $status) {
@@ -60,7 +60,7 @@ class CompanyController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'registration_number' => 'required|string|max:100',
-            'tin' => 'nullable|string|max:100',
+            'tin_number' => 'nullable|string|max:100',
             'address_line_1' => 'required|string|max:255',
             'address_line_2' => 'nullable|string|max:255',
             'city' => 'required|string|max:100',
