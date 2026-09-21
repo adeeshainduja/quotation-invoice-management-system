@@ -47,12 +47,6 @@
                 <span>Create an invoice</span>
             </a>
 
-            <a href="{{ route('payments.create') }}" class="create-card">
-                <i data-lucide="credit-card"></i>
-                <strong>Payment</strong>
-                <span>Record a payment</span>
-            </a>
-
             <a href="{{ route('templates.create') }}" class="create-card">
                 <i data-lucide="notebook-tabs"></i>
                 <strong>Template</strong>
