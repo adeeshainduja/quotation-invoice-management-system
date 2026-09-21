@@ -1,0 +1,228 @@
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.breadcrumb a {
+    color: #3b5d88;
+    text-decoration: none;
+}
+
+.create-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.create-heading h1 {
+    margin: 0;
+    font-size: 30px;
+}
+
+.create-heading p {
+    margin: 7px 0 0;
+    color: #64748b;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 16px;
+    border: 1px solid #d8e0ea;
+    border-radius: 7px;
+    background: #fff;
+    color: #42536e;
+    text-decoration: none;
+}
+
+.payment-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-card {
+    padding: 22px;
+    background: #fff;
+    border: 1px solid #e1e8f0;
+    border-radius: 9px;
+}
+
+.form-card h2 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 20px;
+    font-size: 17px;
+}
+
+.form-card h2 svg {
+    width: 19px;
+}
+
+.form-card label {
+    display: block;
+    margin-bottom: 7px;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.form-card input,
+.form-card select,
+.form-card textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 12px;
+    border: 1px solid #d4dce6;
+    border-radius: 7px;
+    background: #fff;
+}
+
+.form-card textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.two-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.invoice-preview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 8px;
+    background: #f6f8fb;
+}
+
+.invoice-preview div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.invoice-preview span {
+    color: #718096;
+    font-size: 12px;
+}
+
+.invoice-preview strong {
+    color: #23324a;
+}
+
+.balance-value {
+    color: #c04444 !important;
+}
+
+.payment-summary-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #e1e8f0;
+    border-radius: 9px;
+    background: #fff;
+}
+
+.payment-summary-card div {
+    display: flex;
+    justify-content: space-between;
+}
+
+.payment-summary-card span {
+    color: #64748b;
+}
+
+.payment-summary-card strong {
+    color: #1d3557;
+    font-size: 18px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.cancel-btn,
+.save-btn {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 20px;
+    border-radius: 7px;
+    font-weight: 600;
+}
+
+.cancel-btn {
+    border: 1px solid #d4dce6;
+    background: #fff;
+    color: #42536e;
+    text-decoration: none;
+}
+
+.save-btn {
+    border: 0;
+    background: #1474e8;
+    color: #fff;
+    cursor: pointer;
+}
+
+.save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.form-errors,
+.form-warning {
+    margin-bottom: 18px;
+    padding: 13px 16px;
+    border-radius: 7px;
+}
+
+.form-errors {
+    border: 1px solid #ffc2c8;
+    background: #fff0f1;
+    color: #b42331;
+}
+
+.form-warning {
+    border: 1px solid #ffe0a3;
+    background: #fff8e7;
+    color: #916000;
+}
+
+@media (max-width: 900px) {
+    .payment-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 650px) {
+    .two-columns,
+    .invoice-preview,
+    .payment-summary-card {
+        grid-template-columns: 1fr;
+    }
+
+    .create-heading {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+}
