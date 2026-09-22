@@ -16,39 +16,7 @@
 
 <div class="page">
 
-    <header class="topbar">
-        <button class="menu-btn">
-            <i data-lucide="menu"></i>
-        </button>
-
-        <div class="topbar-right">
-            <form method="GET" action="{{ route('invoices.index') }}">
-                <select name="company_id" class="company-select" onchange="this.form.submit()">
-                    <option value="">Select Company</option>
-                    @foreach($companyList as $company)
-                        <option value="{{ $company->id }}" {{ $companyId == $company->id ? 'selected' : '' }}>
-                            {{ $company->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </form>
-
-            <div class="notification">
-                <i data-lucide="bell"></i>
-                <span></span>
-            </div>
-
-            <div class="user-box">
-                <div class="avatar">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
-                </div>
-                <div>
-                    <strong>{{ auth()->user()->name }}</strong>
-                    <small>Administrator</small>
-                </div>
-            </div>
-        </div>
-    </header>
+    @include('partials.topbar')
 
     <main>
         <div class="breadcrumb">

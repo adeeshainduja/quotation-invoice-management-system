@@ -9,10 +9,22 @@ class PaymentController extends Controller
 {
     public function index(Request $request)
     {
-        $companyList = DB::table('companies')
-            ->where('status', 'ACTIVE')
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
+        if ($request->filled('company_id')) {
+            abort_if(! $user->hasCompanyAccess($request->integer('company_id')), 403, 'Unauthorized company access.');
+        }
+
+        $companyList = $user->isAdmin()
+            ? DB::table('companies')
+                ->where('status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['id', 'name'])
+            : $user->accessibleCompanies()
+                ->where('companies.status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['companies.id', 'companies.name']);
 
         $companyId = $request->integer('company_id')
             ?: optional($companyList->first())->id;
@@ -56,7 +68,7 @@ class PaymentController extends Controller
                 ->where('balance_amount', '>', 0)
                 ->whereNotIn('status', [
                     'DRAFT',
-                    'CANCELLED'
+                    'CANCELLED',
                 ]);
 
             $stats['outstanding_amount'] =
@@ -66,7 +78,6 @@ class PaymentController extends Controller
             $stats['outstanding_count'] =
                 (clone $outstanding)
                     ->count();
-
 
             /*
             |--------------------------------------------------------------------------
@@ -94,7 +105,6 @@ class PaymentController extends Controller
                 (clone $received)
                     ->count();
 
-
             /*
             |--------------------------------------------------------------------------
             | Completed
@@ -113,7 +123,6 @@ class PaymentController extends Controller
                 (clone $completed)
                     ->sum('grand_total');
 
-
             /*
             |--------------------------------------------------------------------------
             | Overdue
@@ -127,7 +136,7 @@ class PaymentController extends Controller
                 ->whereNotIn('status', [
                     'DRAFT',
                     'PAID',
-                    'CANCELLED'
+                    'CANCELLED',
                 ]);
 
             $stats['overdue_count'] =
@@ -137,7 +146,6 @@ class PaymentController extends Controller
             $stats['overdue_amount'] =
                 (clone $overdue)
                     ->sum('balance_amount');
-
 
             /*
             |--------------------------------------------------------------------------
@@ -159,7 +167,7 @@ class PaymentController extends Controller
                 ->whereNotIn('status', [
                     'DRAFT',
                     'PAID',
-                    'CANCELLED'
+                    'CANCELLED',
                 ]);
 
             $stats['pending_count'] =
@@ -169,7 +177,6 @@ class PaymentController extends Controller
             $stats['pending_amount'] =
                 (clone $pending)
                     ->sum('balance_amount');
-
 
             /*
             |--------------------------------------------------------------------------
@@ -208,7 +215,6 @@ class PaymentController extends Controller
                     ->count();
         }
 
-
         /*
         |--------------------------------------------------------------------------
         | Payment History
@@ -236,13 +242,11 @@ class PaymentController extends Controller
             )
             ->when(
                 $companyId,
-                fn ($q) =>
-                    $q->where(
-                        'invoices.company_id',
-                        $companyId
-                    ),
-                fn ($q) =>
-                    $q->whereRaw('1 = 0')
+                fn ($q) => $q->where(
+                    'invoices.company_id',
+                    $companyId
+                ),
+                fn ($q) => $q->whereRaw('1 = 0')
             )
             ->when(
                 $request->search,
@@ -271,37 +275,33 @@ class PaymentController extends Controller
             )
             ->when(
                 $request->payment_method,
-                fn ($q, $method) =>
-                    $q->where(
-                        'payments.payment_method',
-                        $method
-                    )
+                fn ($q, $method) => $q->where(
+                    'payments.payment_method',
+                    $method
+                )
             )
             ->when(
                 $request->status,
-                fn ($q, $status) =>
-                    $q->where(
-                        'invoices.status',
-                        $status
-                    )
+                fn ($q, $status) => $q->where(
+                    'invoices.status',
+                    $status
+                )
             )
             ->when(
                 $request->from_date,
-                fn ($q, $date) =>
-                    $q->whereDate(
-                        'payments.payment_date',
-                        '>=',
-                        $date
-                    )
+                fn ($q, $date) => $q->whereDate(
+                    'payments.payment_date',
+                    '>=',
+                    $date
+                )
             )
             ->when(
                 $request->to_date,
-                fn ($q, $date) =>
-                    $q->whereDate(
-                        'payments.payment_date',
-                        '<=',
-                        $date
-                    )
+                fn ($q, $date) => $q->whereDate(
+                    'payments.payment_date',
+                    '<=',
+                    $date
+                )
             )
             ->select(
                 'payments.id',
@@ -329,7 +329,6 @@ class PaymentController extends Controller
             ->orderByDesc('payments.id')
             ->paginate(15)
             ->withQueryString();
-
 
         return view('payments.index', compact(
             'companyList',

@@ -31,67 +31,7 @@
 
 <div class="page">
 
-    {{-- TOPBAR --}}
-    <header class="topbar">
-
-        <div></div>
-
-        <div class="topbar-right">
-
-            <form
-                method="GET"
-                action="{{ route('payments.index') }}"
-            >
-
-                <select
-                    name="company_id"
-                    class="company-select"
-                    onchange="this.form.submit()"
-                >
-
-                    @foreach($companyList as $company)
-
-                        <option
-                            value="{{ $company->id }}"
-                            {{ $companyId == $company->id ? 'selected' : '' }}
-                        >
-                            {{ $company->name }}
-                        </option>
-
-                    @endforeach
-
-                </select>
-
-            </form>
-
-
-            <div class="notification">
-                <i data-lucide="bell"></i>
-                <span></span>
-            </div>
-
-
-            <div class="user">
-
-                <div class="avatar">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
-                </div>
-
-                <div>
-                    <strong>
-                        {{ auth()->user()->name }}
-                    </strong>
-
-                    <small>
-                        User
-                    </small>
-                </div>
-
-            </div>
-
-        </div>
-
-    </header>
+    @include('partials.topbar')
 
 
     <main>
