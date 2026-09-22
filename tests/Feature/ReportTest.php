@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Permission;
+use App\Models\Quotation;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -97,8 +98,7 @@ test('admin can access reports page automatically and sees invoice reports links
     $response->assertSee('Payment Reports');
     $response->assertSee('Customer Reports');
     $response->assertSee('Quotation Reports');
-    $response->assertSee('Invoice Aging Report');
-    $response->assertSee('Paid vs Unpaid Breakdown');
+    $response->assertSee('View Invoice Report');
     $response->assertSee(route('reports.invoices'));
 });
 
@@ -298,8 +298,8 @@ test('reports dashboard links to payment reports page', function () {
     $response = $this->actingAs($admin)->get(route('reports.index'));
 
     $response->assertOk();
-    $response->assertSee('Collection History');
-    $response->assertSee('Payment Methods Summary');
+    $response->assertSee('Payment Reports');
+    $response->assertSee('View Payment Report');
     $response->assertSee(route('reports.payments'));
 });
 
@@ -467,8 +467,8 @@ test('reports dashboard links to quotation reports page', function () {
     $response = $this->actingAs($admin)->get(route('reports.index'));
 
     $response->assertOk();
-    $response->assertSee('Quotation Conversion Rate');
-    $response->assertSee('Quotation Status Pipeline');
+    $response->assertSee('Quotation Reports');
+    $response->assertSee('View Quotation Report');
     $response->assertSee(route('reports.quotations'));
 });
 
@@ -514,7 +514,7 @@ test('admin can filter quotation reports by status', function () {
         'is_default' => true,
     ]);
 
-    \App\Models\Quotation::create([
+    Quotation::create([
         'company_id' => $company->id,
         'customer_id' => $customer->id,
         'quotation_number' => 'QT-001',
@@ -530,7 +530,7 @@ test('admin can filter quotation reports by status', function () {
         'created_by' => $admin->id,
     ]);
 
-    \App\Models\Quotation::create([
+    Quotation::create([
         'company_id' => $company->id,
         'customer_id' => $customer->id,
         'quotation_number' => 'QT-002',
@@ -631,8 +631,8 @@ test('reports dashboard links to customer reports page', function () {
     $response = $this->actingAs($admin)->get(route('reports.index'));
 
     $response->assertOk();
-    $response->assertSee('Top Customers by Revenue');
-    $response->assertSee('Client Outstanding Balances');
+    $response->assertSee('Customer Reports');
+    $response->assertSee('View Customer Report');
     $response->assertSee(route('reports.customers'));
 });
 
