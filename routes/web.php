@@ -75,23 +75,25 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:companies.view')
         ->name('companies.index');
 
-    Route::get('/companies/create', [CompanyController::class, 'create'])
-        ->middleware('permission:companies.create')
-        ->name('companies.create');
+    Route::middleware('admin')->group(function () {
+        Route::get('/companies/create', [CompanyController::class, 'create'])
+            ->name('companies.create');
 
-    Route::post('/companies', [CompanyController::class, 'store'])
-        ->middleware('permission:companies.create')
-        ->name('companies.store');
+        Route::post('/companies', [CompanyController::class, 'store'])
+            ->name('companies.store');
 
-    Route::get('/companies/{id}/edit', [CompanyController::class, 'edit'])
-        ->whereNumber('id')
-        ->middleware('permission:companies.edit')
-        ->name('companies.edit');
+        Route::get('/companies/{id}/edit', [CompanyController::class, 'edit'])
+            ->whereNumber('id')
+            ->name('companies.edit');
 
-    Route::put('/companies/{id}', [CompanyController::class, 'update'])
-        ->whereNumber('id')
-        ->middleware('permission:companies.edit')
-        ->name('companies.update');
+        Route::put('/companies/{id}', [CompanyController::class, 'update'])
+            ->whereNumber('id')
+            ->name('companies.update');
+
+        Route::post('/companies/{id}/toggle-status', [CompanyController::class, 'toggleStatus'])
+            ->whereNumber('id')
+            ->name('companies.toggle-status');
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -296,6 +298,10 @@ Route::middleware('auth')->group(function () {
         Route::put('/users/{id}', [UserController::class, 'update'])
             ->whereNumber('id')
             ->name('users.update');
+
+        Route::post('/users/{id}/toggle-status', [UserController::class, 'toggleStatus'])
+            ->whereNumber('id')
+            ->name('users.toggle-status');
     });
 
     /*
