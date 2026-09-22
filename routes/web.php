@@ -212,6 +212,16 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:invoices.view')
         ->name('invoices.show');
 
+    Route::get('/invoices/{id}/edit', [InvoiceController::class, 'edit'])
+        ->whereNumber('id')
+        ->middleware('permission:invoices.update')
+        ->name('invoices.edit');
+
+    Route::put('/invoices/{id}', [InvoiceController::class, 'update'])
+        ->whereNumber('id')
+        ->middleware('permission:invoices.update')
+        ->name('invoices.update');
+
     Route::get('/invoices/{id}/pdf', [InvoiceController::class, 'downloadPdf'])
         ->whereNumber('id')
         ->middleware('permission:invoices.pdf')
