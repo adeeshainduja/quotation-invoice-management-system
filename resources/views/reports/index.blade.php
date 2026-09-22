@@ -298,7 +298,7 @@
 
 
     {{-- Sales Reports --}}
-    <div class="report-category-card">
+    <!-- <div class="report-category-card">
 
         <div class="category-head">
 
@@ -331,7 +331,7 @@
         </div>
 
     </div>
-
+-->
 
 
     {{-- Invoice Reports --}}
