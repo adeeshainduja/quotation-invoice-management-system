@@ -521,6 +521,12 @@ class QuotationController extends Controller
 
                         'tax_amount' => $taxTotal,
 
+                        'vat_enabled' => $isVatEnabled,
+
+                        'vat_percentage' => $isVatEnabled ? $companyVatRate : 0,
+
+                        'vat_amount' => $taxTotal,
+
                         'additional_charges' => 0,
 
                         'grand_total' => $grandTotal,
@@ -860,6 +866,12 @@ class QuotationController extends Controller
 
             'tax_amount' => $taxTotal,
 
+            'vat_enabled' => $isVatEnabled,
+
+            'vat_percentage' => $isVatEnabled ? $companyVatRate : 0,
+
+            'vat_amount' => $taxTotal,
+
             'grand_total' => $subtotal
                 - $discountTotal
                 + $taxTotal,
@@ -924,7 +936,9 @@ class QuotationController extends Controller
             )
             ->first();
 
-        $isVatEnabled = (bool) ($company->vat_enabled ?? $company->vat_registered ?? false);
+        $isVatEnabled = isset($quotation->vat_enabled)
+            ? (bool) $quotation->vat_enabled
+            : ((float) ($quotation->vat_amount ?? $quotation->tax_amount ?? 0) > 0);
         $templateView = $isVatEnabled ? 'pdf.quotations.tax-quotation' : 'pdf.quotations.normal';
 
         $pdf = Pdf::loadView(
