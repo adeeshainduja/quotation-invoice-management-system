@@ -14,7 +14,7 @@
 
 @include('partials.sidebar')
 
-<div class="page">
+<div class="page content-wrapper">
 
     @include('partials.topbar')
 
@@ -205,8 +205,6 @@
                     to {{ $invoices->lastItem() ?? 0 }}
                     of {{ $invoices->total() }} invoices
                 </span>
-
-                {{ $invoices->links() }}
             </div>
         </section>
     </main>

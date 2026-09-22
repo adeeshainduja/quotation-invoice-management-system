@@ -1,5 +1,5 @@
 :root {
-    --sidebar-width: 258px;
+    --sidebar-width: 260px;
     --blue: #2563eb;
     --blue-dark: #1d4ed8;
     --text: #0f172a;
@@ -28,89 +28,14 @@ body {
 
 /* PAGE */
 
+.content-wrapper,
 .page {
-    margin-left: var(--sidebar-width) !important;
-    width: calc(100% - var(--sidebar-width)) !important;
+    margin-left: 260px;
+    width: calc(100% - 260px);
     min-height: 100vh;
-    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
-/* TOP BAR */
-
-.topbar {
-    height: 72px;
-    padding: 0 28px;
-    background: var(--white);
-    border-bottom: 1px solid var(--border);
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.topbar-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.company-select {
-    width: 220px;
-    height: 42px;
-    padding: 0 12px;
-    border: 1px solid #d7deea;
-    border-radius: 9px;
-    background: #fff;
-}
-
-.notification {
-    position: relative;
-}
-
-.notification svg {
-    width: 21px;
-    height: 21px;
-}
-
-.notification span {
-    position: absolute;
-    top: -2px;
-    right: -2px;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #ef4444;
-}
-
-.user {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-}
-
-.user strong {
-    display: block;
-    font-size: 13px;
-}
-
-.user small {
-    display: block;
-    color: var(--muted);
-    font-size: 11px;
-}
-
-.avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #315be8;
-    color: #fff;
-
-    display: grid;
-    place-items: center;
-
-    font-weight: 700;
-}
 
 /* CONTENT */
 
@@ -175,18 +100,29 @@ main {
     color: #b91c1c;
 }
 
-/* FORM GRID */
-
-.top-grid {
-    display: grid;
-    grid-template-columns: 1.05fr 1.2fr .9fr;
-    gap: 16px;
+/* 1. MAIN PAGE CONTAINER */
+.invoice-container {
+    width: 100%;
+    max-width: 1600px;
+    margin: auto;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
+/* 2. TOP INFORMATION SECTION */
+.invoice-header-grid,
+.top-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+/* 5. NOTES AND SUMMARY */
+.summary-grid,
 .bottom-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr .9fr;
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
     margin-top: 16px;
 }
 
@@ -355,11 +291,18 @@ input[readonly] {
     background: var(--blue-dark);
 }
 
+/* 3. INVOICE ITEMS TABLE */
+.table-responsive,
 .table-wrap {
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
+.invoice-items-table,
 table {
     width: 100%;
     min-width: 1100px;
@@ -387,9 +330,59 @@ td {
     font-size: 12px;
 }
 
-td input,
-td select {
-    min-width: 80px;
+/* 4. ITEM INPUT FIELDS */
+.item-name {
+    min-width: 250px;
+    width: 100%;
+}
+
+.quantity {
+    min-width: 100px;
+    width: 100%;
+}
+
+.unit {
+    min-width: 120px;
+    width: 100%;
+}
+
+.price {
+    min-width: 140px;
+    width: 100%;
+}
+
+.discount {
+    min-width: 140px;
+}
+
+.vat {
+    min-width: 100px;
+    width: 100%;
+}
+
+.total {
+    min-width: 140px;
+}
+
+.discount-box,
+.discount {
+    min-width: 140px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.discount-box select,
+.discount select {
+    width: 70px;
+    min-width: 65px;
+    flex-shrink: 0;
+}
+
+.discount-box input,
+.discount input {
+    flex: 1;
+    min-width: 65px;
 }
 
 td:first-child {
@@ -397,7 +390,7 @@ td:first-child {
 }
 
 td:nth-child(2) {
-    min-width: 230px;
+    min-width: 250px;
 }
 
 .description {
@@ -410,7 +403,8 @@ td:nth-child(2) {
     white-space: nowrap;
 }
 
-.delete-btn {
+.delete-btn,
+.remove-btn {
     width: 35px;
     height: 35px;
     border: none;
@@ -418,9 +412,13 @@ td:nth-child(2) {
     background: #fee2e2;
     color: #dc2626;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.delete-btn:hover {
+.delete-btn:hover,
+.remove-btn:hover {
     background: #fecaca;
 }
 
@@ -523,67 +521,119 @@ td:nth-child(2) {
     padding: 0 20px;
 }
 
-/* RESPONSIVE */
+/* 7. RESPONSIVE BREAKPOINTS */
 
-@media (max-width: 1250px) {
-    .top-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .top-grid .card:last-child {
-        grid-column: 1 / -1;
-    }
-
-    .bottom-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .summary-card {
-        grid-column: 1 / -1;
+/* Desktop: 1400px+ (Normal layout) */
+@media (min-width: 1400px) {
+    .invoice-container {
+        padding: 24px;
     }
 }
 
-@media (max-width: 850px) {
+/* Laptop: 1024px - 1399px (Reduce padding) */
+@media (min-width: 1024px) and (max-width: 1399px) {
+    .invoice-container {
+        padding: 16px;
+    }
+
+    .card,
+    .summary-card {
+        padding: 14px;
+    }
+
+    .invoice-header-grid,
+    .top-grid,
+    .summary-grid,
+    .bottom-grid {
+        gap: 16px;
+    }
+}
+
+/* Tablet: 768px - 1024px (Stack cards) */
+@media (max-width: 1024px) {
+    /* 8. SIDEBAR COMPATIBILITY */
+    .content-wrapper,
     .page {
         margin-left: 0 !important;
         width: 100% !important;
+    }
+
+    .invoice-container {
+        padding: 16px;
     }
 
     main {
         padding: 18px;
     }
 
-    .topbar {
-        padding: 0 18px;
-    }
-
+    .invoice-header-grid,
     .top-grid,
+    .summary-grid,
     .bottom-grid,
     .form-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
 
     .top-grid .card:last-child,
     .summary-card {
-        grid-column: auto;
+        grid-column: auto !important;
     }
 
     .page-heading {
         flex-direction: column;
         align-items: flex-start;
+        gap: 12px;
     }
 
-    .company-select {
-        width: 170px;
-    }
-
-    .user > div:last-child {
-        display: none;
-    }
-
-    .items-heading {
+    .items-heading,
+    .items-head {
         align-items: flex-start;
         flex-direction: column;
+        gap: 10px;
+    }
+
+    .form-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+}
+
+/* Mobile: Below 768px (One column layout) */
+@media (max-width: 768px) {
+    .invoice-container {
+        padding: 12px;
+    }
+
+    main {
+        padding: 12px;
+    }
+
+    .card,
+    .summary-card {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .invoice-header-grid,
+    .top-grid,
+    .summary-grid,
+    .bottom-grid,
+    .form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .form-actions > button,
+    .form-actions > a {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
     }
 }
 

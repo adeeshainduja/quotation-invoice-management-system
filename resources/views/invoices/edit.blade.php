@@ -51,11 +51,11 @@
     }
 @endphp
 
-<div class="page">
+<div class="page content-wrapper">
 
     @include('partials.topbar')
 
-    <main>
+    <main class="invoice-container">
 
         <div class="breadcrumb">
             <a href="{{ route('dashboard') }}">Home</a>
@@ -100,11 +100,12 @@
             id="invoiceForm"
         >
             @csrf
-            @method('PUT')
-
+            <input type="hidden" name="_method" value="PUT" id="invoiceFormMethod">
+            <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
+            <input type="hidden" name="invoice_number" value="{{ $invoice->invoice_number }}">
             <input type="hidden" name="company_id" value="{{ $invoice->company_id }}">
 
-            <div class="top-grid">
+            <div class="top-grid invoice-header-grid">
 
                 {{-- CUSTOMER --}}
                 <section class="card">
@@ -292,8 +293,8 @@
                     </button>
                 </div>
 
-                <div class="table-wrap">
-                    <table id="itemsTable">
+                <div class="table-responsive">
+                    <table class="invoice-items-table" id="itemsTable">
                         <thead>
                         <tr>
                             <th>#</th>
@@ -319,6 +320,7 @@
                                         name="items[{{ $index }}][item_name]"
                                         value="{{ $item['item_name'] }}"
                                         placeholder="Item name"
+                                        class="item-name"
                                         required
                                     >
                                     <input
@@ -348,7 +350,7 @@
                                         name="items[{{ $index }}][unit]"
                                         value="{{ $item['unit'] }}"
                                         placeholder="hrs/pcs"
-                                        class="unit-input"
+                                        class="unit unit-input"
                                     >
                                 </td>
 
@@ -359,13 +361,13 @@
                                         value="{{ $item['unit_price'] }}"
                                         min="0"
                                         step="0.01"
-                                        class="calc unit-price"
+                                        class="calc price unit-price"
                                         required
                                     >
                                 </td>
 
                                 <td>
-                                    <div class="discount-box">
+                                    <div class="discount discount-box">
                                         <select
                                             name="items[{{ $index }}][discount_type]"
                                             class="calc discount-type"
@@ -394,11 +396,11 @@
                                         min="0"
                                         max="100"
                                         step="0.01"
-                                        class="calc tax"
+                                        class="calc vat tax"
                                     >
                                 </td>
 
-                                <td class="line-total">0.00</td>
+                                <td class="line-total total">0.00</td>
 
                                 <td>
                                     <button
@@ -416,7 +418,7 @@
                 </div>
             </section>
 
-            <div class="bottom-grid">
+            <div class="bottom-grid summary-grid">
                 {{-- NOTES & TERMS --}}
                 <section class="card">
                     <div class="card-title">
@@ -515,6 +517,8 @@
                     formmethod="POST"
                     formtarget="_blank"
                     class="preview-btn"
+                    id="previewBtn"
+                    onclick="var m=document.getElementById('invoiceFormMethod'); if(m){ m.disabled=true; setTimeout(function(){ m.disabled=false; }, 1000); }"
                 >
                     <i data-lucide="eye"></i>
                     Preview
@@ -522,7 +526,11 @@
 
                 <button
                     type="submit"
+                    name="_method"
+                    value="PUT"
                     class="save-btn"
+                    id="saveBtn"
+                    onclick="var m=document.getElementById('invoiceFormMethod'); if(m){ m.disabled=false; }"
                 >
                     <i data-lucide="save"></i>
                     Update Invoice
@@ -552,6 +560,7 @@ function addItem()
                 type="text"
                 name="items[${itemIndex}][item_name]"
                 placeholder="Item name"
+                class="item-name"
                 required
             >
             <input
@@ -577,7 +586,7 @@ function addItem()
                 type="text"
                 name="items[${itemIndex}][unit]"
                 placeholder="hrs/pcs"
-                class="unit-input"
+                class="unit unit-input"
             >
         </td>
         <td>
@@ -587,12 +596,12 @@ function addItem()
                 value="0"
                 min="0"
                 step="0.01"
-                class="calc unit-price"
+                class="calc price unit-price"
                 required
             >
         </td>
         <td>
-            <div class="discount-box">
+            <div class="discount discount-box">
                 <select
                     name="items[${itemIndex}][discount_type]"
                     class="calc discount-type"
@@ -619,10 +628,10 @@ function addItem()
                 min="0"
                 max="100"
                 step="0.01"
-                class="calc tax"
+                class="calc vat tax"
             >
         </td>
-        <td class="line-total">0.00</td>
+        <td class="line-total total">0.00</td>
         <td>
             <button
                 type="button"
@@ -767,6 +776,21 @@ if (customerSelect) {
 updateCustomer();
 calculateTotals();
 lucide.createIcons();
+
+const invoiceForm = document.getElementById('invoiceForm');
+const invoiceMethod = document.getElementById('invoiceFormMethod');
+if (invoiceForm && invoiceMethod) {
+    invoiceForm.addEventListener('submit', function(e) {
+        if (e.submitter && (e.submitter.id === 'previewBtn' || (e.submitter.getAttribute('formaction') && e.submitter.getAttribute('formaction').includes('preview')))) {
+            invoiceMethod.disabled = true;
+            setTimeout(function() {
+                invoiceMethod.disabled = false;
+            }, 1000);
+        } else {
+            invoiceMethod.disabled = false;
+        }
+    });
+}
 </script>
 
 </body>

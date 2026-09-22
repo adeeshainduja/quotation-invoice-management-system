@@ -802,8 +802,19 @@ class InvoiceController extends Controller
                 }
             }
 
+            if (! empty($data['quotation_id'])) {
+                return redirect()
+                    ->route('invoices.show', $invoiceId)
+                    ->with(
+                        'success',
+                        'Invoice created successfully.'
+                    );
+            }
+
             return redirect()
-                ->route('invoices.show', $invoiceId)
+                ->route('invoices.index', [
+                    'company_id' => $company->id,
+                ])
                 ->with(
                     'success',
                     'Invoice created successfully.'
@@ -834,11 +845,11 @@ class InvoiceController extends Controller
 
             'terms_conditions' => 'nullable|string',
 
-            'payment_method' => 'required|in:CASH,BANK_TRANSFER,CARD,CHEQUE,OTHER',
+            'payment_method' => 'nullable|in:CASH,BANK_TRANSFER,CARD,CHEQUE,OTHER',
 
-            'payment_date' => 'required|date',
+            'payment_date' => 'nullable|date',
 
-            'payment_amount' => 'required|numeric|gt:0',
+            'payment_amount' => 'nullable|numeric|min:0',
 
             'payment_reference' => 'nullable|string|max:255',
 
@@ -987,29 +998,43 @@ class InvoiceController extends Controller
             + $taxTotal
             + $additionalCharges;
 
-        $paymentAmount =
-            (float) $data['payment_amount'];
+        $payments = collect();
+        if ($request->filled('invoice_id')) {
+            $payments = DB::table('payments')
+                ->where('invoice_id', $request->input('invoice_id'))
+                ->orderBy('payment_date')
+                ->get();
+            $existingPaid = (float) $payments->sum('amount');
+        } else {
+            $existingPaid = 0;
+        }
 
-        if ($paymentAmount > $grandTotal) {
+        $paymentAmount = isset($data['payment_amount']) && $data['payment_amount'] !== null && $data['payment_amount'] !== ''
+            ? (float) $data['payment_amount']
+            : $existingPaid;
+
+        if ($paymentAmount > 0 && $paymentAmount > $grandTotal) {
             throw ValidationException::withMessages([
                 'payment_amount' => 'Payment amount cannot exceed invoice total.',
             ]);
         }
 
-        $balance =
-            $grandTotal - $paymentAmount;
+        $balance = max(0, $grandTotal - $paymentAmount);
 
-        $invoiceNumber =
-            rtrim($company->invoice_prefix, '-')
-            .'-'
-            .now()->format('Y')
-            .'-'
-            .str_pad(
-                $company->invoice_next_number,
-                4,
-                '0',
-                STR_PAD_LEFT
-            );
+        $invoiceNumber = $request->input('invoice_number');
+        if (! $invoiceNumber) {
+            $invoiceNumber =
+                rtrim($company->invoice_prefix, '-')
+                .'-'
+                .now()->format('Y')
+                .'-'
+                .str_pad(
+                    $company->invoice_next_number,
+                    4,
+                    '0',
+                    STR_PAD_LEFT
+                );
+        }
 
         $invoice = (object) [
             'invoice_number' => $invoiceNumber,
@@ -1044,28 +1069,30 @@ class InvoiceController extends Controller
 
             'balance_amount' => $balance,
 
-            'status' => $balance <= 0
+            'status' => $balance <= 0 && $grandTotal > 0
                     ? 'PAID'
-                    : 'PARTIALLY_PAID',
+                    : ($paymentAmount > 0 ? 'PARTIALLY_PAID' : 'SENT'),
 
             'notes' => $data['notes'] ?? null,
 
             'terms_conditions' => $data['terms_conditions'] ?? null,
         ];
 
-        $payments = collect([
-            (object) [
-                'payment_date' => $data['payment_date'],
+        if (! $request->filled('invoice_id') && ! empty($data['payment_method']) && $paymentAmount > 0) {
+            $payments = collect([
+                (object) [
+                    'payment_date' => $data['payment_date'] ?? now()->toDateString(),
 
-                'amount' => $paymentAmount,
+                    'amount' => $paymentAmount,
 
-                'payment_method' => $data['payment_method'],
+                    'payment_method' => $data['payment_method'],
 
-                'reference' => $data['payment_reference'] ?? null,
+                    'reference' => $data['payment_reference'] ?? null,
 
-                'notes' => $data['payment_notes'] ?? null,
-            ],
-        ]);
+                    'notes' => $data['payment_notes'] ?? null,
+                ],
+            ]);
+        }
 
         return view('invoices.pdf', compact(
             'invoice',
@@ -1157,7 +1184,7 @@ class InvoiceController extends Controller
             ->where('company_id', $invoice->company_id)
             ->where('document_type', 'INVOICE')
             ->where(function ($query) use ($invoice) {
-                $query->where('status', 'ACTIVE')
+                $query->where('is_default', 1)
                     ->orWhere('id', $invoice->template_id);
             })
             ->orderByDesc('is_default')

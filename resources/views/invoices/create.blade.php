@@ -51,12 +51,12 @@
     $prefillAddCharges     = $quotation->additional_charges ?? 0;
 @endphp
 
-<div class="page">
+<div class="page content-wrapper">
 
     @include('partials.topbar')
 
 
-    <main>
+    <main class="invoice-container">
 
         <div class="breadcrumb">
             <a href="{{ route('dashboard') }}">Home</a>
@@ -116,7 +116,7 @@
             @endif
 
 
-            <div class="top-grid">
+            <div class="top-grid invoice-header-grid">
 
                 {{-- CUSTOMER --}}
                 <section class="card">
@@ -403,9 +403,9 @@
 
                 </div>
 
-                <div class="table-wrap">
+                <div class="table-responsive">
 
-                    <table>
+                    <table class="invoice-items-table" id="itemsTable">
 
                         <thead>
                         <tr>
@@ -437,6 +437,7 @@
                                         name="items[{{ $index }}][item_name]"
                                         value="{{ $item['item_name'] ?? '' }}"
                                         placeholder="Item name"
+                                        class="item-name"
                                         required
                                     >
 
@@ -467,6 +468,7 @@
                                         name="items[{{ $index }}][unit]"
                                         value="{{ $item['unit'] ?? '' }}"
                                         placeholder="pcs"
+                                        class="unit"
                                     >
                                 </td>
 
@@ -477,29 +479,31 @@
                                         value="{{ $item['unit_price'] ?? 0 }}"
                                         min="0"
                                         step="0.01"
-                                        class="calc unit-price"
+                                        class="calc price unit-price"
                                         required
                                     >
                                 </td>
 
                                 <td>
-                                    <select
-                                        name="items[{{ $index }}][discount_type]"
-                                        class="calc discount-type"
-                                    >
-                                        <option value="NONE" {{ ($item['discount_type'] ?? 'NONE') === 'NONE' ? 'selected' : '' }}>None</option>
-                                        <option value="PERCENTAGE" {{ ($item['discount_type'] ?? '') === 'PERCENTAGE' ? 'selected' : '' }}>%</option>
-                                        <option value="FIXED" {{ ($item['discount_type'] ?? '') === 'FIXED' ? 'selected' : '' }}>Fixed</option>
-                                    </select>
+                                    <div class="discount discount-box">
+                                        <select
+                                            name="items[{{ $index }}][discount_type]"
+                                            class="calc discount-type"
+                                        >
+                                            <option value="NONE" {{ ($item['discount_type'] ?? 'NONE') === 'NONE' ? 'selected' : '' }}>None</option>
+                                            <option value="PERCENTAGE" {{ ($item['discount_type'] ?? '') === 'PERCENTAGE' ? 'selected' : '' }}>%</option>
+                                            <option value="FIXED" {{ ($item['discount_type'] ?? '') === 'FIXED' ? 'selected' : '' }}>Fixed</option>
+                                        </select>
 
-                                    <input
-                                        type="number"
-                                        name="items[{{ $index }}][discount_value]"
-                                        value="{{ $item['discount_value'] ?? 0 }}"
-                                        min="0"
-                                        step="0.01"
-                                        class="calc discount-value"
-                                    >
+                                        <input
+                                            type="number"
+                                            name="items[{{ $index }}][discount_value]"
+                                            value="{{ $item['discount_value'] ?? 0 }}"
+                                            min="0"
+                                            step="0.01"
+                                            class="calc discount-value"
+                                        >
+                                    </div>
                                 </td>
 
                                 <td>
@@ -510,11 +514,11 @@
                                         min="0"
                                         max="100"
                                         step="0.01"
-                                        class="calc tax"
+                                        class="calc vat tax"
                                     >
                                 </td>
 
-                                <td class="line-total">
+                                <td class="line-total total">
                                     0.00
                                 </td>
 
@@ -541,7 +545,7 @@
             </section>
 
 
-            <div class="bottom-grid">
+            <div class="bottom-grid summary-grid">
 
                 {{-- REQUIRED PAYMENT --}}
                 <section class="card">
@@ -768,6 +772,7 @@ function addItem()
                 type="text"
                 name="items[${itemIndex}][item_name]"
                 placeholder="Item name"
+                class="item-name"
                 required
             >
 
@@ -796,6 +801,7 @@ function addItem()
                 type="text"
                 name="items[${itemIndex}][unit]"
                 placeholder="pcs"
+                class="unit"
             >
         </td>
 
@@ -806,29 +812,31 @@ function addItem()
                 value="0"
                 min="0"
                 step="0.01"
-                class="calc unit-price"
+                class="calc price unit-price"
                 required
             >
         </td>
 
         <td>
-            <select
-                name="items[${itemIndex}][discount_type]"
-                class="calc discount-type"
-            >
-                <option value="NONE">None</option>
-                <option value="PERCENTAGE">%</option>
-                <option value="FIXED">Fixed</option>
-            </select>
+            <div class="discount discount-box">
+                <select
+                    name="items[${itemIndex}][discount_type]"
+                    class="calc discount-type"
+                >
+                    <option value="NONE">None</option>
+                    <option value="PERCENTAGE">%</option>
+                    <option value="FIXED">Fixed</option>
+                </select>
 
-            <input
-                type="number"
-                name="items[${itemIndex}][discount_value]"
-                value="0"
-                min="0"
-                step="0.01"
-                class="calc discount-value"
-            >
+                <input
+                    type="number"
+                    name="items[${itemIndex}][discount_value]"
+                    value="0"
+                    min="0"
+                    step="0.01"
+                    class="calc discount-value"
+                >
+            </div>
         </td>
 
         <td>
@@ -839,11 +847,11 @@ function addItem()
                 min="0"
                 max="100"
                 step="0.01"
-                class="calc tax"
+                class="calc vat tax"
             >
         </td>
 
-        <td class="line-total">0.00</td>
+        <td class="line-total total">0.00</td>
 
         <td>
             <button
