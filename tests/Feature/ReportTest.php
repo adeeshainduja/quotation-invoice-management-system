@@ -392,3 +392,167 @@ test('admin can access payment reports page and filter payments by method', func
     $response->assertSee('Smith Traders');
     $response->assertSee('Apex Solutions');
 });
+
+test('guests are redirected to login when visiting quotation reports', function () {
+    $response = $this->get(route('reports.quotations'));
+
+    $response->assertRedirect(route('login'));
+});
+
+test('user without reports.quotation.view permission receives 403 on quotation reports', function () {
+    $this->seed(PermissionSeeder::class);
+
+    $user = User::factory()->create([
+        'role' => 'USER',
+        'status' => 'ACTIVE',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('reports.quotations'));
+
+    $response->assertStatus(403);
+});
+
+test('user with reports.quotation.view can view quotation reports with cards and export buttons', function () {
+    $this->seed(PermissionSeeder::class);
+
+    $user = User::factory()->create([
+        'role' => 'USER',
+        'status' => 'ACTIVE',
+    ]);
+
+    $permission = Permission::where('key', 'reports.quotation.view')->first();
+    $user->permissions()->attach($permission);
+
+    $response = $this->actingAs($user)->get(route('reports.quotations'));
+
+    $response->assertOk();
+    $response->assertSee('Quotation Reports');
+    $response->assertSee('Quotation performance, conversion tracking and sales pipeline');
+    $response->assertSee('Export PDF');
+    $response->assertSee('Export Excel');
+    $response->assertSee('Print');
+    $response->assertSee('Total Quotations');
+    $response->assertSee('Total Quotation Value');
+    $response->assertSee('Accepted Quotations');
+    $response->assertSee('Converted to Invoice');
+    $response->assertSee('Pending Quotations');
+    $response->assertSee('Rejected Quotations');
+    $response->assertSee('Expired Quotations');
+    $response->assertSee('Quotation Status Pipeline');
+    $response->assertSee('Conversion Rate');
+});
+
+test('admin can access quotation reports automatically', function () {
+    $this->seed(PermissionSeeder::class);
+
+    $admin = User::factory()->create([
+        'role' => 'ADMIN',
+        'status' => 'ACTIVE',
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('reports.quotations'));
+
+    $response->assertOk();
+    $response->assertSee('Quotation Reports');
+});
+
+test('reports dashboard links to quotation reports page', function () {
+    $this->seed(PermissionSeeder::class);
+
+    $admin = User::factory()->create([
+        'role' => 'ADMIN',
+        'status' => 'ACTIVE',
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('reports.index'));
+
+    $response->assertOk();
+    $response->assertSee('Quotation Conversion Rate');
+    $response->assertSee('Quotation Status Pipeline');
+    $response->assertSee(route('reports.quotations'));
+});
+
+test('admin can filter quotation reports by status', function () {
+    $this->seed(PermissionSeeder::class);
+
+    $admin = User::factory()->create([
+        'role' => 'ADMIN',
+        'status' => 'ACTIVE',
+    ]);
+
+    $company = Company::create([
+        'name' => 'Beta Corp',
+        'registration_number' => 'REG-BETA',
+        'address_line_1' => '5 Innovation Drive',
+        'city' => 'Colombo',
+        'country' => 'Sri Lanka',
+        'phone' => '+94117777777',
+        'email' => 'beta@example.com',
+        'website' => 'https://beta.example.com',
+        'logo_path' => 'logos/beta.png',
+        'quotation_prefix' => 'QT-',
+        'invoice_prefix' => 'INV-',
+        'status' => 'ACTIVE',
+        'currency' => 'LKR',
+    ]);
+
+    $customer = Customer::create([
+        'company_id' => $company->id,
+        'customer_name' => 'Bob Johnson',
+        'business_name' => 'Johnson Ltd',
+        'email' => 'bob@example.com',
+        'address_line_1' => '22 Commerce St',
+        'city' => 'Colombo',
+        'country' => 'Sri Lanka',
+        'status' => 'ACTIVE',
+    ]);
+
+    $template = CompanyTemplate::create([
+        'company_id' => $company->id,
+        'document_type' => 'QUOTATION',
+        'template_name' => 'Standard Quotation',
+        'is_default' => true,
+    ]);
+
+    \App\Models\Quotation::create([
+        'company_id' => $company->id,
+        'customer_id' => $customer->id,
+        'quotation_number' => 'QT-001',
+        'quotation_date' => '2026-09-01',
+        'expiry_date' => '2026-09-30',
+        'subtotal' => 5000,
+        'grand_total' => 5500,
+        'status' => 'ACCEPTED',
+        'template_id' => $template->id,
+        'company_snapshot' => ['name' => 'Beta Corp'],
+        'customer_snapshot' => ['name' => 'Bob Johnson'],
+        'template_snapshot' => ['name' => 'Standard Quotation'],
+        'created_by' => $admin->id,
+    ]);
+
+    \App\Models\Quotation::create([
+        'company_id' => $company->id,
+        'customer_id' => $customer->id,
+        'quotation_number' => 'QT-002',
+        'quotation_date' => '2026-09-05',
+        'expiry_date' => '2026-09-25',
+        'subtotal' => 3000,
+        'grand_total' => 3300,
+        'status' => 'REJECTED',
+        'template_id' => $template->id,
+        'company_snapshot' => ['name' => 'Beta Corp'],
+        'customer_snapshot' => ['name' => 'Bob Johnson'],
+        'template_snapshot' => ['name' => 'Standard Quotation'],
+        'created_by' => $admin->id,
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('reports.quotations', [
+        'status' => 'ACCEPTED',
+    ]));
+
+    $response->assertOk();
+    $response->assertSee('QT-001');
+    $response->assertDontSee('QT-002');
+    $response->assertSee('Johnson Ltd');
+    $response->assertSee('Beta Corp');
+});

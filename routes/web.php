@@ -221,6 +221,14 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:reports.payment.view')
         ->name('reports.payments');
 
+    Route::get('/reports/quotations', [ReportController::class, 'quotationReport'])
+        ->middleware('permission:reports.quotation.view')
+        ->name('reports.quotations');
+
+    Route::get('/reports/customers', [ReportController::class, 'customerReport'])
+        ->middleware('permission:reports.customer.view')
+        ->name('reports.customers');
+
     /*
     |--------------------------------------------------------------------------
     | Activity Logs

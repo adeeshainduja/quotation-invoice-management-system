@@ -265,4 +265,83 @@ class ReportController extends Controller
             'outstandingInvoiceAmount' => $outstandingInvoiceAmount,
         ]);
     }
+
+    /**
+     * Display the detailed Quotation Report.
+     */
+    public function quotationReport(Request $request): View
+    {
+        $companies = Company::where('status', 'ACTIVE')
+            ->orderBy('name')
+            ->get(['id', 'name', 'currency']);
+
+        $companyId = $request->filled('company_id')
+            ? $request->integer('company_id')
+            : null;
+
+        $selectedCompany = $companyId ? $companies->firstWhere('id', $companyId) : null;
+        $currency = $selectedCompany->currency ?? ($companies->first()->currency ?? 'LKR');
+
+        $from = $request->query('from') ?: $request->query('from_date');
+        $to = $request->query('to') ?: $request->query('to_date');
+        $customerId = $request->filled('customer_id') ? $request->integer('customer_id') : null;
+        $status = $request->query('status');
+
+        $customers = Customer::when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->orderBy('business_name')
+            ->get(['id', 'business_name', 'customer_name', 'company_id']);
+
+        // Build filtered query using existing Quotation model
+        $query = Quotation::query()
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
+            ->when($from, fn ($q) => $q->whereDate('quotation_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('quotation_date', '<=', $to))
+            ->when($status, fn ($q) => $q->where('status', $status));
+
+        // Calculate Summary Cards
+        $totalQuotations = (clone $query)->count();
+        $totalQuotationValue = (float) (clone $query)->sum('grand_total');
+
+        $acceptedQuotations = (clone $query)->where('status', 'ACCEPTED')->count();
+        $rejectedQuotations = (clone $query)->where('status', 'REJECTED')->count();
+
+        $pendingQuotations = (clone $query)
+            ->whereIn('status', ['DRAFT', 'SENT'])
+            ->count();
+
+        $expiredQuotations = (clone $query)->where('status', 'EXPIRED')->count();
+
+        $convertedQuotations = (clone $query)
+            ->where(function ($q) {
+                $q->where('status', 'CONVERTED')
+                    ->orWhereHas('invoice');
+            })
+            ->count();
+
+        $quotations = (clone $query)
+            ->with(['customer', 'company', 'invoice'])
+            ->orderByDesc('quotation_date')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('reports.quotations', [
+            'quotations' => $quotations,
+            'companies' => $companies,
+            'customers' => $customers,
+            'companyId' => $companyId,
+            'customerId' => $customerId,
+            'from' => $from,
+            'to' => $to,
+            'status' => $status,
+            'currency' => $currency,
+            'totalQuotations' => $totalQuotations,
+            'totalQuotationValue' => $totalQuotationValue,
+            'acceptedQuotations' => $acceptedQuotations,
+            'rejectedQuotations' => $rejectedQuotations,
+            'pendingQuotations' => $pendingQuotations,
+            'expiredQuotations' => $expiredQuotations,
+            'convertedQuotations' => $convertedQuotations,
+        ]);
+    }
 }
