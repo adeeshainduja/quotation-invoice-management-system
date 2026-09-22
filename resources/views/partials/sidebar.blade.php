@@ -121,6 +121,20 @@
         @endif
 
 
+        {{-- REPORTS --}}
+        @if($user->hasPermission('reports.view'))
+
+            <a
+                href="{{ route('reports.index', $companyParam) }}"
+                class="{{ request()->routeIs('reports.*') ? 'active' : '' }}"
+            >
+                <i data-lucide="bar-chart"></i>
+                Reports
+            </a>
+
+        @endif
+
+
         {{-- ACTIVITY LOGS --}}
         @if(
             Route::has('activity-logs.index') &&
