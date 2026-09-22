@@ -118,6 +118,16 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:customers.view')
         ->name('customers.show');
 
+    Route::get('/customers/{id}/edit', [CustomerController::class, 'edit'])
+        ->whereNumber('id')
+        ->middleware('permission:customers.update')
+        ->name('customers.edit');
+
+    Route::put('/customers/{id}', [CustomerController::class, 'update'])
+        ->whereNumber('id')
+        ->middleware('permission:customers.update')
+        ->name('customers.update');
+
     /*
     |--------------------------------------------------------------------------
     | Quotations
