@@ -323,7 +323,7 @@
 
 @include('partials.sidebar')
 
-<div class="page">
+<div class="page content-wrapper">
 
     @include('partials.topbar')
 
@@ -641,17 +641,13 @@
                 </table>
             </div>
 
-            @if($customers->hasPages())
-                <div class="table-footer">
-                    <span>
-                        Showing {{ $customers->firstItem() ?? 0 }}
-                        to {{ $customers->lastItem() ?? 0 }}
-                        of {{ $customers->total() }} customers
-                    </span>
-
-                    {{ $customers->links() }}
-                </div>
-            @endif
+            <div class="table-footer">
+                <span>
+                    Showing {{ $customers->firstItem() ?? 0 }}
+                    to {{ $customers->lastItem() ?? 0 }}
+                    of {{ $customers->total() }} customers
+                </span>
+            </div>
         </section>
 
     </main>

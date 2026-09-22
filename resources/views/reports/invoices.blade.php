@@ -213,7 +213,7 @@
 
 @include('partials.sidebar')
 
-<div class="page">
+<div class="page content-wrapper">
 
     @include('partials.topbar')
 
@@ -480,17 +480,13 @@
                 </table>
             </div>
 
-            @if($invoices->hasPages())
-                <div class="table-footer">
-                    <span>
-                        Showing {{ $invoices->firstItem() ?? 0 }}
-                        to {{ $invoices->lastItem() ?? 0 }}
-                        of {{ $invoices->total() }} invoices
-                    </span>
-
-                    {{ $invoices->links() }}
-                </div>
-            @endif
+            <div class="table-footer">
+                <span>
+                    Showing {{ $invoices->firstItem() ?? 0 }}
+                    to {{ $invoices->lastItem() ?? 0 }}
+                    of {{ $invoices->total() }} invoices
+                </span>
+            </div>
         </section>
 
     </main>

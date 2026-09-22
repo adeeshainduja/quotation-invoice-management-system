@@ -245,7 +245,7 @@
 
 @include('partials.sidebar')
 
-<div class="page">
+<div class="page content-wrapper">
 
     @include('partials.topbar')
 
@@ -502,17 +502,13 @@
                 </table>
             </div>
 
-            @if($payments->hasPages())
-                <div class="table-footer">
-                    <span>
-                        Showing {{ $payments->firstItem() ?? 0 }}
-                        to {{ $payments->lastItem() ?? 0 }}
-                        of {{ $payments->total() }} payments
-                    </span>
-
-                    {{ $payments->links() }}
-                </div>
-            @endif
+            <div class="table-footer">
+                <span>
+                    Showing {{ $payments->firstItem() ?? 0 }}
+                    to {{ $payments->lastItem() ?? 0 }}
+                    of {{ $payments->total() }} payments
+                </span>
+            </div>
         </section>
 
     </main>

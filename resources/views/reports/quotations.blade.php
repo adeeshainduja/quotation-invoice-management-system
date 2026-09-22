@@ -321,7 +321,7 @@
 
 @include('partials.sidebar')
 
-<div class="page">
+<div class="page content-wrapper">
 
     @include('partials.topbar')
 
@@ -633,17 +633,13 @@
                 </table>
             </div>
 
-            @if($quotations->hasPages())
-                <div class="table-footer">
-                    <span>
-                        Showing {{ $quotations->firstItem() ?? 0 }}
-                        to {{ $quotations->lastItem() ?? 0 }}
-                        of {{ $quotations->total() }} quotations
-                    </span>
-
-                    {{ $quotations->links() }}
-                </div>
-            @endif
+            <div class="table-footer">
+                <span>
+                    Showing {{ $quotations->firstItem() ?? 0 }}
+                    to {{ $quotations->lastItem() ?? 0 }}
+                    of {{ $quotations->total() }} quotations
+                </span>
+            </div>
         </section>
 
     </main>
