@@ -21,59 +21,7 @@
 
 <div class="page">
 
-    {{-- TOP BAR --}}
-    <header class="topbar">
-
-        <form method="GET" action="{{ route('quotations.create') }}">
-
-            <select
-                name="company_id"
-                class="company-select"
-                onchange="this.form.submit()"
-            >
-
-                <option value="">Select Company</option>
-
-                @foreach($companyList as $item)
-
-                    <option
-                        value="{{ $item->id }}"
-                        {{ $companyId == $item->id ? 'selected' : '' }}
-                    >
-                        {{ $item->name }}
-                    </option>
-
-                @endforeach
-
-            </select>
-
-        </form>
-
-
-        <div class="topbar-right">
-
-            <div class="notification">
-                <i data-lucide="bell"></i>
-                <span></span>
-            </div>
-
-
-            <div class="user">
-
-                <div class="avatar">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
-                </div>
-
-                <div>
-                    <strong>{{ auth()->user()->name }}</strong>
-                    <small>Administrator</small>
-                </div>
-
-            </div>
-
-        </div>
-
-    </header>
+    @include('partials.topbar')
 
 
     <main>
@@ -326,6 +274,26 @@
                                 <p style="margin-top: 5px; font-size: 12px; color: #059669; font-weight: 500; display: flex; align-items: center; gap: 4px;">
                                     <i data-lucide="info" style="width: 14px; height: 14px;"></i>
                                     VAT registered company - Tax template automatically applied
+                                </p>
+                            @elseif(!auth()->user()->isAdmin())
+                                @php
+                                    $userAssignedTemplate = auth()->user()->getAssignedQuotationTemplate($companyId);
+                                    $lockedTemplateId = old('template_id')
+                                        ?: optional($userAssignedTemplate)->id
+                                        ?: optional($templates->firstWhere('is_default', 1))->id
+                                        ?: optional($templates->first())->id;
+                                    $lockedTemplateName = optional($userAssignedTemplate)->template_name
+                                        ?: optional($templates->firstWhere('is_default', 1))->template_name
+                                        ?: optional($templates->first())->template_name
+                                        ?: 'Modern Quotation Template';
+                                @endphp
+                                <input type="hidden" name="template_id" value="{{ $lockedTemplateId }}">
+                                <select disabled class="form-control" style="background-color: #f3f4f6; cursor: not-allowed; color: #374151;">
+                                    <option selected>{{ $lockedTemplateName }} (Assigned)</option>
+                                </select>
+                                <p style="margin-top: 5px; font-size: 12px; color: #2563eb; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="lock" style="width: 14px; height: 14px;"></i>
+                                    Template assigned by administrator
                                 </p>
                             @else
                                 <select

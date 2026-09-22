@@ -32,63 +32,7 @@
 
 <div class="page">
 
-    <header class="topbar">
-
-        <form
-            method="GET"
-            action="{{ route('quotations.index') }}"
-        >
-            <select
-                name="company_id"
-                class="company-select"
-                onchange="this.form.submit()"
-            >
-
-                @forelse($companyList as $company)
-
-                    <option
-                        value="{{ $company->id }}"
-                        {{ $companyId == $company->id ? 'selected' : '' }}
-                    >
-                        {{ $company->name }}
-                    </option>
-
-                @empty
-
-                    <option value="">
-                        No Companies
-                    </option>
-
-                @endforelse
-
-            </select>
-        </form>
-
-
-        <div class="topbar-right">
-
-            <div class="notification">
-                <i data-lucide="bell"></i>
-                <span></span>
-            </div>
-
-
-            <div class="user">
-
-                <div class="avatar">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
-                </div>
-
-                <div>
-                    <strong>{{ auth()->user()->name }}</strong>
-                    <small>Administrator</small>
-                </div>
-
-            </div>
-
-        </div>
-
-    </header>
+    @include('partials.topbar')
 
 
     <main>
