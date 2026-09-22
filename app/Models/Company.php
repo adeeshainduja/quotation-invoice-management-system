@@ -127,4 +127,9 @@ class Company extends Model
     {
         return $this->hasMany(ActivityLog::class);
     }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class);
+    }
 }

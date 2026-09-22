@@ -20,38 +20,7 @@
 
 <div class="page">
 
-    <header class="topbar">
-
-        <div class="company-box">
-            <i data-lucide="building-2"></i>
-            {{ $company->name ?? 'Company' }}
-        </div>
-
-
-        <div class="topbar-right">
-
-            <div class="notification">
-                <i data-lucide="bell"></i>
-                <span></span>
-            </div>
-
-
-            <div class="user">
-
-                <div class="avatar">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
-                </div>
-
-                <div>
-                    <strong>{{ auth()->user()->name }}</strong>
-                    <small>Administrator</small>
-                </div>
-
-            </div>
-
-        </div>
-
-    </header>
+    @include('partials.topbar')
 
 
     <main>
@@ -119,31 +88,6 @@
                 @endif
 
 
-                @if(Route::has('customers.destroy'))
-
-                    <form
-                        method="POST"
-                        action="{{ route('customers.destroy', $customer->id) }}"
-                        onsubmit="return confirm('Are you sure you want to delete this customer?')"
-                    >
-
-                        @csrf
-                        @method('DELETE')
-
-                        <button
-                            type="submit"
-                            class="delete-btn"
-                        >
-
-                            <i data-lucide="trash-2"></i>
-
-                            Delete
-
-                        </button>
-
-                    </form>
-
-                @endif
 
             </div>
 

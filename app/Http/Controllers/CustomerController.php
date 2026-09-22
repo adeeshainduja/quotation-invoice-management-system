@@ -9,10 +9,22 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
-        $companyList = DB::table('companies')
-            ->where('status', 'ACTIVE')
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
+        if ($request->filled('company_id')) {
+            abort_if(! $user->hasCompanyAccess($request->integer('company_id')), 403, 'Unauthorized company access.');
+        }
+
+        $companyList = $user->isAdmin()
+            ? DB::table('companies')
+                ->where('status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['id', 'name'])
+            : $user->accessibleCompanies()
+                ->where('companies.status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['companies.id', 'companies.name']);
 
         $companyId = $request->integer('company_id')
             ?: optional($companyList->first())->id;
@@ -59,15 +71,18 @@ class CustomerController extends Controller
         ));
     }
 
-
     public function show(Request $request, $id)
     {
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
         $customer = DB::table('customers')
             ->where('id', $id)
             ->when($request->integer('company_id'), fn ($query, $companyId) => $query->where('company_id', $companyId))
             ->first();
 
-        abort_if(!$customer, 404);
+        abort_if(! $customer, 404);
+        abort_if(! $user->hasCompanyAccess($customer->company_id), 403, 'Unauthorized company access.');
 
         $company = DB::table('companies')
             ->where('id', $customer->company_id)
@@ -103,22 +118,37 @@ class CustomerController extends Controller
     }
 
     public function create(Request $request)
-{
-    $companyList = DB::table('companies')
-        ->where('status', 'ACTIVE')
-        ->orderBy('name')
-        ->get(['id', 'name']);
+    {
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
 
-    $companyId = $request->integer('company_id') ?: optional($companyList->first())->id;
+        if ($request->filled('company_id')) {
+            abort_if(! $user->hasCompanyAccess($request->integer('company_id')), 403, 'Unauthorized company access.');
+        }
 
-    return view('customers.create', compact(
-        'companyList',
-        'companyId'
-    ));
-}
+        $companyList = $user->isAdmin()
+            ? DB::table('companies')
+                ->where('status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['id', 'name'])
+            : $user->accessibleCompanies()
+                ->where('companies.status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['companies.id', 'companies.name']);
+
+        $companyId = $request->integer('company_id') ?: optional($companyList->first())->id;
+
+        return view('customers.create', compact(
+            'companyList',
+            'companyId'
+        ));
+    }
 
     public function store(Request $request)
     {
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
         $data = $request->validate([
             'company_id' => 'required|exists:companies,id',
             'customer_name' => 'required|string|max:255',
@@ -134,6 +164,11 @@ class CustomerController extends Controller
             'notes' => 'nullable|string',
             'status' => 'required|in:ACTIVE,INACTIVE',
         ]);
+
+        abort_if(! $user->hasCompanyAccess($data['company_id']), 403, 'Unauthorized company access.');
+
+        $company = DB::table('companies')->where('id', $data['company_id'])->first();
+        abort_if(! $company || $company->status !== 'ACTIVE', 403, 'Cannot create transactions for an inactive company.');
 
         $id = DB::table('customers')->insertGetId([
             ...$data,

@@ -20,63 +20,7 @@
 
 <div class="page">
 
-    <header class="topbar">
-
-        <button class="menu" type="button">
-            <i data-lucide="menu"></i>
-        </button>
-
-
-        <div class="topbar-right">
-
-            <select class="company-select">
-
-                <option value="">
-                    All Companies
-                </option>
-
-                @foreach($companyList as $item)
-
-                    <option value="{{ $item->id }}">
-                        {{ $item->name }}
-                    </option>
-
-                @endforeach
-
-            </select>
-
-
-            <div class="notification">
-                <i data-lucide="bell"></i>
-                <span></span>
-            </div>
-
-
-            <div class="user">
-
-                <div class="avatar">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
-                </div>
-
-                <div>
-                    <strong>{{ auth()->user()->name }}</strong>
-                    <small>Administrator</small>
-                </div>
-
-
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-
-                    <button class="logout" type="submit">
-                        <i data-lucide="log-out"></i>
-                    </button>
-                </form>
-
-            </div>
-
-        </div>
-
-    </header>
+    @include('partials.topbar')
 
 
     <main>
@@ -105,18 +49,20 @@
             </div>
 
 
-            <a href="{{ route('companies.create') }}"
-               class="add-company">
+            @if(auth()->user() && auth()->user()->isAdmin())
+                <a href="{{ route('companies.create') }}"
+                   class="add-company">
 
-                <i data-lucide="plus"></i>
+                    <i data-lucide="plus"></i>
 
-                Add Company
-            </a>
+                    Add Company
+                </a>
+            @endif
 
         </div>
 
 
-        @if(session('success'))
+        <!-- @if(session('success'))
 
             <div class="alert-success">
                 {{ session('success') }}
@@ -131,7 +77,7 @@
                 {{ session('error') }}
             </div>
 
-        @endif
+        @endif  -->
 
 
         <section class="company-stats">
@@ -374,19 +320,44 @@
                                     @endif
 
 
-                                    @if(Route::has('companies.edit'))
+                                    @if(auth()->user() && auth()->user()->isAdmin())
 
-                                        <a href="{{ route('companies.edit', $company->id) }}">
-                                            <i data-lucide="pencil"></i>
-                                            Edit
-                                        </a>
+                                        @if(Route::has('companies.edit'))
+
+                                            <a href="{{ route('companies.edit', $company->id) }}">
+                                                <i data-lucide="pencil"></i>
+                                                Edit
+                                            </a>
+
+                                        @endif
+
+                                        <form
+                                            method="POST"
+                                            action="{{ route('companies.toggle-status', $company->id) }}"
+                                            onsubmit="return confirm('Are you sure you want to {{ $company->status === 'ACTIVE' ? 'deactivate' : 'activate' }} this company?')"
+                                            style="display: inline;"
+                                        >
+                                            @csrf
+                                            @if($company->status === 'ACTIVE')
+                                                <button
+                                                    type="submit"
+                                                    style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; padding: 4px 8px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"
+                                                >
+                                                    <i data-lucide="power-off" style="width: 12px; height: 12px;"></i>
+                                                    Deactivate
+                                                </button>
+                                            @else
+                                                <button
+                                                    type="submit"
+                                                    style="background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; border-radius: 6px; padding: 4px 8px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"
+                                                >
+                                                    <i data-lucide="power" style="width: 12px; height: 12px;"></i>
+                                                    Activate
+                                                </button>
+                                            @endif
+                                        </form>
 
                                     @endif
-
-
-                                    <button type="button">
-                                        <i data-lucide="more-vertical"></i>
-                                    </button>
 
                                 </div>
 
