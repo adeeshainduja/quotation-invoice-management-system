@@ -998,6 +998,60 @@ class InvoiceController extends Controller
         ));
     }
 
+    public function show($id)
+    {
+        $invoice = DB::table('invoices')
+            ->leftJoin('users', 'invoices.created_by', '=', 'users.id')
+            ->where('invoices.id', $id)
+            ->select('invoices.*', 'users.name as created_by_name')
+            ->first();
+
+        abort_if(! $invoice, 404);
+
+        $user = auth()->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+        abort_if(! $user->hasCompanyAccess($invoice->company_id), 403, 'Unauthorized company access.');
+
+        $company = DB::table('companies')->where('id', $invoice->company_id)->first();
+        $customer = DB::table('customers')->where('id', $invoice->customer_id)->first();
+        $template = DB::table('company_templates')->where('id', $invoice->template_id)->first();
+
+        if (! $customer && ! empty($invoice->customer_snapshot)) {
+            $customer = json_decode($invoice->customer_snapshot);
+        }
+        if (! $company && ! empty($invoice->company_snapshot)) {
+            $company = json_decode($invoice->company_snapshot);
+        }
+        if (! $template && ! empty($invoice->template_snapshot)) {
+            $template = json_decode($invoice->template_snapshot);
+        }
+
+        $items = DB::table('invoice_items')
+            ->where('invoice_id', $id)
+            ->orderBy('sort_order')
+            ->get();
+
+        $payments = DB::table('payments')
+            ->where('invoice_id', $id)
+            ->orderByDesc('payment_date')
+            ->orderByDesc('id')
+            ->get();
+
+        $quotation = $invoice->quotation_id
+            ? DB::table('quotations')->where('id', $invoice->quotation_id)->first()
+            : null;
+
+        return view('invoices.show', compact(
+            'invoice',
+            'company',
+            'customer',
+            'items',
+            'payments',
+            'template',
+            'quotation'
+        ));
+    }
+
     public function downloadPdf($id)
     {
         $invoice = DB::table('invoices')
@@ -1015,36 +1069,48 @@ class InvoiceController extends Controller
                 ? json_decode(
                     $invoice->company_snapshot
                 )
-                : DB::table('companies')
-                    ->where(
-                        'id',
-                        $invoice->company_id
-                    )
-                    ->first();
+                : null;
+
+        if (is_string($company)) {
+            $company = json_decode($company);
+        }
+        if (! is_object($company)) {
+            $company = DB::table('companies')
+                ->where('id', $invoice->company_id)
+                ->first();
+        }
 
         $customer =
             $invoice->customer_snapshot
                 ? json_decode(
                     $invoice->customer_snapshot
                 )
-                : DB::table('customers')
-                    ->where(
-                        'id',
-                        $invoice->customer_id
-                    )
-                    ->first();
+                : null;
+
+        if (is_string($customer)) {
+            $customer = json_decode($customer);
+        }
+        if (! is_object($customer)) {
+            $customer = DB::table('customers')
+                ->where('id', $invoice->customer_id)
+                ->first();
+        }
 
         $template =
             $invoice->template_snapshot
                 ? json_decode(
                     $invoice->template_snapshot
                 )
-                : DB::table('company_templates')
-                    ->where(
-                        'id',
-                        $invoice->template_id
-                    )
-                    ->first();
+                : null;
+
+        if (is_string($template)) {
+            $template = json_decode($template);
+        }
+        if (! is_object($template)) {
+            $template = DB::table('company_templates')
+                ->where('id', $invoice->template_id)
+                ->first();
+        }
 
         $items = DB::table('invoice_items')
             ->where('invoice_id', $id)

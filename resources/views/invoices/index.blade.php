@@ -173,6 +173,10 @@
                                         <a href="{{ route('invoices.show', $invoice->id) }}">View</a>
                                     @endif
 
+                                    @if(Route::has('invoices.pdf'))
+                                        <a href="{{ route('invoices.pdf', $invoice->id) }}" target="_blank">PDF</a>
+                                    @endif
+
                                     @if(Route::has('payments.create'))
                                         <a href="{{ route('payments.create', ['invoice_id' => $invoice->id]) }}">Pay</a>
                                     @endif
