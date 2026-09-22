@@ -22,7 +22,7 @@
     $companyId = $companyId ?? $customer->company_id;
 @endphp
 
-<div class="page">
+<div class="page content-wrapper">
 
     @include('partials.topbar')
 

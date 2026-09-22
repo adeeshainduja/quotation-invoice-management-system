@@ -18,7 +18,7 @@
 @include('partials.sidebar')
 
 
-<div class="page">
+<div class="page content-wrapper">
 
     @include('partials.topbar')
 
@@ -328,9 +328,6 @@
                     {{ $customers->total() }}
                     customers
                 </span>
-
-
-                {{ $customers->links() }}
 
             </div>
 
