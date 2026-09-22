@@ -201,25 +201,57 @@
                         </div>
 
                         <div>
+                            <label>VAT Status</label>
+                            @if($isVatEnabled)
+                                <div style="display: flex; align-items: center; height: 38px; padding: 0 12px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; color: #065f46; font-size: 13px; font-weight: 600; gap: 6px;">
+                                    <i data-lucide="check-circle" style="width: 16px; height: 16px; color: #059669;"></i>
+                                    VAT Enabled ({{ $defaultTax }}%)
+                                </div>
+                            @else
+                                <div style="display: flex; align-items: center; height: 38px; padding: 0 12px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; color: #6b7280; font-size: 13px; font-weight: 500; gap: 6px;">
+                                    <i data-lucide="x-circle" style="width: 16px; height: 16px; color: #9ca3af;"></i>
+                                    VAT Disabled
+                                </div>
+                            @endif
+                        </div>
+
+                        <div>
                             <label>Template *</label>
 
-                            <select name="template_id" required>
-                                <option value="">Select Template</option>
+                            @if($isVatEnabled)
+                                @php
+                                    $defaultTemplateId = old('template_id')
+                                        ?: optional($templates->firstWhere('template_name', 'Tax Invoice Template'))->id
+                                        ?: optional($templates->firstWhere('is_default', 1))->id
+                                        ?: optional($templates->first())->id;
+                                @endphp
+                                <input type="hidden" name="template_id" value="{{ $defaultTemplateId }}">
+                                <select disabled class="form-control" style="background-color: #f3f4f6; cursor: not-allowed; color: #374151;">
+                                    <option selected>Tax Invoice Template</option>
+                                </select>
+                                <p style="margin-top: 5px; font-size: 12px; color: #059669; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                                    VAT registered company - Tax template automatically applied
+                                </p>
+                            @else
+                                <select name="template_id" required>
+                                    <option value="">Select Template</option>
 
-                                @foreach($templates as $template)
-                                    <option
-                                        value="{{ $template->id }}"
-                                        {{ old(
-                                            'template_id',
-                                            optional(
-                                                $templates->firstWhere('is_default', 1)
-                                            )->id
-                                        ) == $template->id ? 'selected' : '' }}
-                                    >
-                                        {{ $template->template_name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                                    @foreach($templates as $template)
+                                        <option
+                                            value="{{ $template->id }}"
+                                            {{ old(
+                                                'template_id',
+                                                optional(
+                                                    $templates->firstWhere('is_default', 1)
+                                                )->id
+                                            ) == $template->id ? 'selected' : '' }}
+                                        >
+                                            {{ $template->template_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @endif
                         </div>
 
                         <div>
