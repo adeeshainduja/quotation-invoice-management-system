@@ -524,6 +524,16 @@ class InvoiceController extends Controller
                         $taxTotal
                     ),
 
+                    'vat_enabled' => $isVatEnabled,
+
+                    'vat_percentage' => $this->integerToDecimal(
+                        $isVatEnabled ? $this->decimalToInteger($companyVatRate) : 0
+                    ),
+
+                    'vat_amount' => $this->integerToDecimal(
+                        $taxTotal
+                    ),
+
                     'additional_charges' => $this->integerToDecimal(
                         $additionalCharges
                     ),
@@ -901,6 +911,14 @@ class InvoiceController extends Controller
 
             'tax_amount' => $taxTotal,
 
+            'vat_enabled' => (bool) ($company->vat_enabled ?? $company->vat_registered ?? false),
+
+            'vat_percentage' => (bool) ($company->vat_enabled ?? $company->vat_registered ?? false)
+                ? (float) ($company->tax_percentage ?? $company->vat_percentage ?? 0)
+                : 0,
+
+            'vat_amount' => $taxTotal,
+
             'additional_charges' => $additionalCharges,
 
             'grand_total' => $grandTotal,
@@ -1005,7 +1023,9 @@ class InvoiceController extends Controller
             )
             ->first();
 
-        $isVatEnabled = (bool) ($company->vat_enabled ?? $company->vat_registered ?? false);
+        $isVatEnabled = isset($invoice->vat_enabled)
+            ? (bool) $invoice->vat_enabled
+            : ((float) ($invoice->vat_amount ?? $invoice->tax_amount ?? 0) > 0);
         $templateView = $isVatEnabled ? 'pdf.invoices.tax-invoice' : 'pdf.invoices.normal';
 
         $pdf = Pdf::loadView(
