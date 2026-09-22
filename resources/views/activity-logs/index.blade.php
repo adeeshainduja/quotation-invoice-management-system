@@ -38,74 +38,7 @@
 <div class="page">
 
 
-    {{-- TOP BAR --}}
-    <header class="topbar">
-
-
-        <button
-            type="button"
-            class="menu"
-        >
-            <i data-lucide="menu"></i>
-        </button>
-
-
-        <div class="topbar-right">
-
-
-            <div class="restricted-badge">
-
-                <i data-lucide="shield-check"></i>
-
-                Restricted Access
-
-            </div>
-
-
-            <div class="notification">
-
-                <i data-lucide="bell"></i>
-
-                <span></span>
-
-            </div>
-
-
-            <div class="user">
-
-
-                <div class="avatar">
-
-                    {{
-                        strtoupper(
-                            substr(
-                                auth()->user()->name,
-                                0,
-                                2
-                            )
-                        )
-                    }}
-
-                </div>
-
-
-                <div>
-
-                    <strong>
-                        {{ auth()->user()->name }}
-                    </strong>
-
-                    <small>
-                        Administrator
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </header>
+    @include('partials.topbar')
 
 
 

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -10,10 +9,22 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $companies = DB::table('companies')
-            ->where('status', 'ACTIVE')
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
+        if ($request->filled('company_id')) {
+            abort_if(! $user->hasCompanyAccess($request->integer('company_id')), 403, 'Unauthorized company access.');
+        }
+
+        $companies = $user->isAdmin()
+            ? DB::table('companies')
+                ->where('status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['id', 'name'])
+            : $user->accessibleCompanies()
+                ->where('companies.status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['companies.id', 'companies.name']);
 
         $companyId = $request->integer('company_id')
             ?: optional($companies->first())->id;
@@ -74,14 +85,14 @@ class DashboardController extends Controller
             $monthlyQuotations[] = $query('quotations')
                 ->whereBetween('quotation_date', [
                     $month->copy()->startOfMonth(),
-                    $month->copy()->endOfMonth()
+                    $month->copy()->endOfMonth(),
                 ])
                 ->count();
 
             $monthlyInvoices[] = $query('invoices')
                 ->whereBetween('invoice_date', [
                     $month->copy()->startOfMonth(),
-                    $month->copy()->endOfMonth()
+                    $month->copy()->endOfMonth(),
                 ])
                 ->count();
         }
@@ -98,8 +109,7 @@ class DashboardController extends Controller
         // Recent quotations
         $recentQuotations = DB::table('quotations')
             ->join('customers', 'quotations.customer_id', '=', 'customers.id')
-            ->when($companyId, fn ($q) =>
-                $q->where('quotations.company_id', $companyId)
+            ->when($companyId, fn ($q) => $q->where('quotations.company_id', $companyId)
             )
             ->select(
                 'quotations.quotation_number',
@@ -116,8 +126,7 @@ class DashboardController extends Controller
         // Recent invoices
         $recentInvoices = DB::table('invoices')
             ->join('customers', 'invoices.customer_id', '=', 'customers.id')
-            ->when($companyId, fn ($q) =>
-                $q->where('invoices.company_id', $companyId)
+            ->when($companyId, fn ($q) => $q->where('invoices.company_id', $companyId)
             )
             ->select(
                 'invoices.invoice_number',
@@ -150,8 +159,7 @@ class DashboardController extends Controller
         // Payments this month
         $payments = DB::table('payments')
             ->join('invoices', 'payments.invoice_id', '=', 'invoices.id')
-            ->when($companyId, fn ($q) =>
-                $q->where('invoices.company_id', $companyId)
+            ->when($companyId, fn ($q) => $q->where('invoices.company_id', $companyId)
             )
             ->whereBetween('payments.payment_date', [$start, $end])
             ->sum('payments.amount');
