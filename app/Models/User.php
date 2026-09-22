@@ -69,6 +69,12 @@ class User extends Authenticatable
                 ->exists();
         }
 
+        if ($permission === 'customers.update' || $permission === 'customers.edit') {
+            return $this->permissions()
+                ->whereIn('key', ['customers.update', 'customers.edit'])
+                ->exists();
+        }
+
         return $this->permissions()
             ->where('key', $permission)
             ->exists();
