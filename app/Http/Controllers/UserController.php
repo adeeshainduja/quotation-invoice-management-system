@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Permission;
 use App\Models\User;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -69,7 +70,7 @@ class UserController extends Controller
             'templates.*' => 'integer|exists:company_templates,id',
         ]);
 
-        DB::transaction(function () use ($data) {
+        $user = DB::transaction(function () use ($data) {
 
             $user = User::create([
                 'name' => $data['name'],
@@ -90,7 +91,18 @@ class UserController extends Controller
             $user->templates()->sync(
                 $data['templates'] ?? []
             );
+
+            return $user;
         });
+
+        ActivityLogger::log(
+            'CREATE',
+            'User',
+            $user->id,
+            null,
+            null,
+            ['name' => $user->name, 'email' => $user->email, 'role' => 'USER', 'status' => $data['status']]
+        );
 
         return redirect()
             ->route('users.index')
@@ -186,6 +198,15 @@ class UserController extends Controller
             'templates.*' => 'integer|exists:company_templates,id',
         ]);
 
+        $oldName = $user->name;
+        $oldEmail = $user->email;
+        $oldStatus = $user->status;
+        $oldPermissions = $user->permissions->pluck('id')->map(fn ($v) => (int) $v)->sort()->values()->toArray();
+        $oldCompanies = $user->companies->pluck('id')->map(fn ($v) => (int) $v)->sort()->values()->toArray();
+
+        $newPermissions = collect($data['permissions'] ?? [])->map(fn ($v) => (int) $v)->sort()->values()->toArray();
+        $newCompanies = collect($data['companies'] ?? [])->map(fn ($v) => (int) $v)->sort()->values()->toArray();
+
         DB::transaction(function () use ($data, $user) {
 
             $user->name = $data['name'];
@@ -211,6 +232,37 @@ class UserController extends Controller
             );
         });
 
+        ActivityLogger::log(
+            'UPDATE',
+            'User',
+            $user->id,
+            null,
+            ['name' => $oldName, 'email' => $oldEmail, 'status' => $oldStatus],
+            ['name' => $data['name'], 'email' => $data['email'], 'status' => $data['status']]
+        );
+
+        if ($oldPermissions !== $newPermissions) {
+            ActivityLogger::log(
+                'PERMISSION CHANGE',
+                'User',
+                $user->id,
+                null,
+                ['permissions' => $oldPermissions],
+                ['permissions' => $newPermissions]
+            );
+        }
+
+        if ($oldCompanies !== $newCompanies) {
+            ActivityLogger::log(
+                'COMPANY ACCESS CHANGE',
+                'User',
+                $user->id,
+                null,
+                ['companies' => $oldCompanies],
+                ['companies' => $newCompanies]
+            );
+        }
+
         return redirect()
             ->route('users.index')
             ->with('success', 'User updated successfully.');
@@ -228,8 +280,29 @@ class UserController extends Controller
             return back()->with('error', 'Administrator accounts cannot be deactivated.');
         }
 
+        $oldStatus = $user->status;
         $user->status = $user->status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
         $user->save();
+
+        if ($user->status === 'INACTIVE') {
+            ActivityLogger::log(
+                'DEACTIVATE',
+                'User',
+                $user->id,
+                null,
+                ['status' => 'ACTIVE'],
+                ['status' => 'INACTIVE']
+            );
+        } else {
+            ActivityLogger::log(
+                'UPDATE',
+                'User',
+                $user->id,
+                null,
+                ['status' => 'INACTIVE'],
+                ['status' => 'ACTIVE']
+            );
+        }
 
         $message = $user->status === 'ACTIVE'
             ? "User '{$user->name}' activated successfully."

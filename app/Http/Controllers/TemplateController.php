@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -197,8 +198,8 @@ class TemplateController extends Controller
                     ]);
             }
 
-            DB::table('company_templates')
-                ->insert([
+            $templateId = DB::table('company_templates')
+                ->insertGetId([
 
                     'company_id' => $data['company_id'],
 
@@ -235,6 +236,19 @@ class TemplateController extends Controller
 
                     'updated_at' => now(),
                 ]);
+
+            ActivityLogger::log(
+                'CREATE',
+                'Template',
+                $templateId,
+                $data['company_id'],
+                null,
+                [
+                    'template_name' => $data['template_name'],
+                    'document_type' => $data['document_type'],
+                    'is_default' => $isDefault ? 1 : 0,
+                ]
+            );
         });
 
         return redirect()
