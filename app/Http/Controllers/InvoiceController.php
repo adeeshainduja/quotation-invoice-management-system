@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ActivityLogger;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -720,6 +721,19 @@ class InvoiceController extends Controller
                     'updated_at' => now(),
                 ]);
 
+            ActivityLogger::log(
+                'CREATE',
+                'Invoice',
+                $invoiceId,
+                $company->id,
+                null,
+                [
+                    'invoice_number' => $invoiceNumber,
+                    'grand_total' => $this->integerToDecimal($grandTotal),
+                    'status' => $status,
+                ]
+            );
+
             return redirect()
                 ->route('invoices.index', [
                     'company_id' => $company->id,
@@ -1052,6 +1066,269 @@ class InvoiceController extends Controller
         ));
     }
 
+    public function edit(Request $request, $id)
+    {
+        $invoice = DB::table('invoices')->where('id', $id)->first();
+        abort_if(! $invoice, 404);
+
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+        abort_if(! $user->hasCompanyAccess($invoice->company_id), 403, 'Unauthorized company access.');
+
+        $company = DB::table('companies')->where('id', $invoice->company_id)->first();
+        abort_if(! $company, 404);
+
+        $customers = DB::table('customers')
+            ->where('company_id', $invoice->company_id)
+            ->where(function ($query) use ($invoice) {
+                $query->where('status', 'ACTIVE')
+                    ->orWhere('id', $invoice->customer_id);
+            })
+            ->orderBy('business_name')
+            ->get();
+
+        $templates = DB::table('company_templates')
+            ->where('company_id', $invoice->company_id)
+            ->where('document_type', 'INVOICE')
+            ->where(function ($query) use ($invoice) {
+                $query->where('status', 'ACTIVE')
+                    ->orWhere('id', $invoice->template_id);
+            })
+            ->orderByDesc('is_default')
+            ->orderBy('template_name')
+            ->get();
+
+        $items = DB::table('invoice_items')
+            ->where('invoice_id', $id)
+            ->orderBy('sort_order')
+            ->get();
+
+        return view('invoices.edit', compact(
+            'invoice',
+            'company',
+            'customers',
+            'templates',
+            'items'
+        ));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $invoice = DB::table('invoices')->where('id', $id)->first();
+        abort_if(! $invoice, 404);
+
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+        abort_if(! $user->hasCompanyAccess($invoice->company_id), 403, 'Unauthorized company access.');
+
+        $data = $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'template_id' => 'required|exists:company_templates,id',
+            'invoice_date' => 'required|date',
+            'due_date' => 'nullable|date|after_or_equal:invoice_date',
+            'subject' => 'nullable|string|max:255',
+            'reference' => 'nullable|string|max:255',
+            'additional_charges' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string',
+            'terms_conditions' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.item_name' => 'required|string|max:255',
+            'items.*.description' => 'nullable|string',
+            'items.*.quantity' => 'required|numeric|gt:0',
+            'items.*.unit' => 'nullable|string|max:50',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.discount_type' => 'required|in:NONE,PERCENTAGE,FIXED',
+            'items.*.discount_value' => 'required|numeric|min:0',
+            'items.*.tax_percentage' => 'required|numeric|min:0|max:100',
+        ]);
+
+        return DB::transaction(function () use ($data, $invoice) {
+            $company = DB::table('companies')
+                ->where('id', $invoice->company_id)
+                ->where('status', 'ACTIVE')
+                ->first();
+
+            if (! $company) {
+                throw ValidationException::withMessages([
+                    'company_id' => 'Selected company is not available.',
+                ]);
+            }
+
+            $customer = DB::table('customers')
+                ->where('id', $data['customer_id'])
+                ->where('company_id', $company->id)
+                ->where('status', 'ACTIVE')
+                ->first();
+
+            if (! $customer) {
+                throw ValidationException::withMessages([
+                    'customer_id' => 'Selected customer does not belong to this company.',
+                ]);
+            }
+
+            $template = DB::table('company_templates')
+                ->where('id', $data['template_id'])
+                ->where('company_id', $company->id)
+                ->where('document_type', 'INVOICE')
+                ->first();
+
+            if (! $template) {
+                throw ValidationException::withMessages([
+                    'template_id' => 'Selected invoice template is invalid.',
+                ]);
+            }
+
+            $subtotal = 0;
+            $discountTotal = 0;
+            $taxTotal = 0;
+            $items = [];
+
+            $isVatEnabled = (bool) ($company->vat_enabled ?? $company->vat_registered ?? false);
+            $companyVatRate = $isVatEnabled ? (float) ($company->tax_percentage ?? $company->vat_percentage ?? 0) : 0;
+
+            foreach ($data['items'] as $index => $item) {
+                $quantity = $this->decimalToInteger($item['quantity']);
+                $unitPrice = $this->decimalToInteger($item['unit_price']);
+                $lineSubtotal = (int) round(($quantity * $unitPrice) / 100);
+
+                $discountType = $item['discount_type'];
+                $discountValue = $this->decimalToInteger($item['discount_value']);
+                $discountAmount = 0;
+
+                if ($discountType === 'PERCENTAGE') {
+                    if ($discountValue > 10000) {
+                        throw ValidationException::withMessages([
+                            "items.$index.discount_value" => 'Percentage discount cannot exceed 100%.',
+                        ]);
+                    }
+                    $discountAmount = (int) round(($lineSubtotal * $discountValue) / 10000);
+                } elseif ($discountType === 'FIXED') {
+                    $discountAmount = $discountValue;
+                    if ($discountAmount > $lineSubtotal) {
+                        throw ValidationException::withMessages([
+                            "items.$index.discount_value" => 'Fixed discount cannot exceed subtotal.',
+                        ]);
+                    }
+                }
+
+                $taxable = $lineSubtotal - $discountAmount;
+                $taxPercentage = $isVatEnabled
+                    ? $this->decimalToInteger($item['tax_percentage'] ?? $companyVatRate)
+                    : 0;
+
+                $taxAmount = $isVatEnabled
+                    ? (int) round(($taxable * $taxPercentage) / 10000)
+                    : 0;
+
+                $lineTotal = $taxable + $taxAmount;
+
+                $subtotal += $lineSubtotal;
+                $discountTotal += $discountAmount;
+                $taxTotal += $taxAmount;
+
+                $items[] = [
+                    'sort_order' => $index + 1,
+                    'item_name' => $item['item_name'],
+                    'description' => $item['description'] ?? null,
+                    'quantity' => $this->integerToDecimal($quantity),
+                    'unit' => $item['unit'] ?? null,
+                    'unit_price' => $this->integerToDecimal($unitPrice),
+                    'discount_type' => $discountType,
+                    'discount_value' => $this->integerToDecimal($discountValue),
+                    'discount_amount' => $this->integerToDecimal($discountAmount),
+                    'tax_percentage' => $this->integerToDecimal($taxPercentage),
+                    'tax_amount' => $this->integerToDecimal($taxAmount),
+                    'line_total' => $this->integerToDecimal($lineTotal),
+                ];
+            }
+
+            $additionalCharges = $this->decimalToInteger($data['additional_charges'] ?? 0);
+            $grandTotal = $subtotal - $discountTotal + $taxTotal + $additionalCharges;
+            $amountPaid = $this->decimalToInteger($invoice->amount_paid ?? 0);
+            $balanceAmount = max(0, $grandTotal - $amountPaid);
+
+            $status = $invoice->status;
+            if ($status !== 'CANCELLED') {
+                if ($balanceAmount <= 0 && $grandTotal > 0) {
+                    $status = 'PAID';
+                } elseif ($amountPaid > 0) {
+                    $status = 'PARTIALLY_PAID';
+                } elseif ($status === 'DRAFT') {
+                    $status = 'DRAFT';
+                } else {
+                    $status = 'SENT';
+                }
+            }
+
+            $oldData = [
+                'customer_id' => $invoice->customer_id,
+                'subtotal' => $invoice->subtotal,
+                'grand_total' => $invoice->grand_total,
+                'balance_amount' => $invoice->balance_amount,
+                'status' => $invoice->status,
+            ];
+
+            DB::table('invoices')
+                ->where('id', $invoice->id)
+                ->update([
+                    'customer_id' => $customer->id,
+                    'template_id' => $template->id,
+                    'invoice_date' => $data['invoice_date'],
+                    'due_date' => $data['due_date'] ?? null,
+                    'subject' => $data['subject'] ?? null,
+                    'reference' => $data['reference'] ?? null,
+                    'subtotal' => $this->integerToDecimal($subtotal),
+                    'discount_type' => $discountTotal > 0 ? 'FIXED' : 'NONE',
+                    'discount_value' => $this->integerToDecimal($discountTotal),
+                    'discount_amount' => $this->integerToDecimal($discountTotal),
+                    'tax_percentage' => $this->integerToDecimal($isVatEnabled ? $this->decimalToInteger($companyVatRate) : 0),
+                    'tax_amount' => $this->integerToDecimal($taxTotal),
+                    'vat_enabled' => $isVatEnabled,
+                    'vat_percentage' => $this->integerToDecimal($isVatEnabled ? $this->decimalToInteger($companyVatRate) : 0),
+                    'vat_amount' => $this->integerToDecimal($taxTotal),
+                    'additional_charges' => $this->integerToDecimal($additionalCharges),
+                    'grand_total' => $this->integerToDecimal($grandTotal),
+                    'balance_amount' => $this->integerToDecimal($balanceAmount),
+                    'status' => $status,
+                    'notes' => $data['notes'] ?? null,
+                    'terms_conditions' => $data['terms_conditions'] ?? null,
+                    'customer_snapshot' => json_encode($customer, JSON_UNESCAPED_UNICODE),
+                    'template_snapshot' => json_encode($template, JSON_UNESCAPED_UNICODE),
+                    'updated_at' => now(),
+                ]);
+
+            DB::table('invoice_items')->where('invoice_id', $invoice->id)->delete();
+
+            foreach ($items as $item) {
+                DB::table('invoice_items')->insert([
+                    'invoice_id' => $invoice->id,
+                    'source_quotation_item_id' => null,
+                    ...$item,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            ActivityLogger::log(
+                'UPDATE',
+                'Invoice',
+                $invoice->id,
+                $invoice->company_id,
+                $oldData,
+                [
+                    'customer_id' => $customer->id,
+                    'grand_total' => $this->integerToDecimal($grandTotal),
+                    'balance_amount' => $this->integerToDecimal($balanceAmount),
+                    'status' => $status,
+                ]
+            );
+
+            return redirect()
+                ->route('invoices.show', $invoice->id)
+                ->with('success', 'Invoice updated successfully.');
+        });
+    }
+
     public function downloadPdf($id)
     {
         $invoice = DB::table('invoices')
@@ -1146,6 +1423,15 @@ class InvoiceController extends Controller
                 'bank',
                 'payments'
             )
+        );
+
+        ActivityLogger::log(
+            'EXPORT PDF',
+            'Invoice',
+            $invoice->id,
+            $invoice->company_id,
+            null,
+            ['invoice_number' => $invoice->invoice_number]
         );
 
         return $pdf->download(

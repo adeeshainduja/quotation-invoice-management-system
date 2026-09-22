@@ -173,8 +173,12 @@
                                         <a href="{{ route('invoices.show', $invoice->id) }}">View</a>
                                     @endif
 
+                                    @if((auth()->user()->isAdmin() || auth()->user()->hasPermission('invoices.update') || auth()->user()->hasPermission('invoices.edit')) && Route::has('invoices.edit'))
+                                        <a href="{{ route('invoices.edit', $invoice->id) }}">Edit</a>
+                                    @endif
+
                                     @if(Route::has('invoices.pdf'))
-                                        <a href="{{ route('invoices.pdf', $invoice->id) }}" target="_blank">PDF</a>
+                                        <a href="{{ route('invoices.pdf', $invoice->id) }}" target="_blank">Export PDF</a>
                                     @endif
 
                                     @if(Route::has('payments.create'))
