@@ -30,6 +30,7 @@
 
 
 <div class="page">
+    @include('partials.topbar')
 
     <main>
 
@@ -203,16 +204,44 @@
 
                                 @if(!$user->isAdmin())
 
-                                    <a
-                                        href="{{ route(
-                                            'users.edit',
-                                            $user->id
-                                        ) }}"
-                                        class="edit-btn"
-                                    >
-                                        <i data-lucide="settings-2"></i>
-                                        Manage
-                                    </a>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <a
+                                            href="{{ route(
+                                                'users.edit',
+                                                $user->id
+                                            ) }}"
+                                            class="edit-btn"
+                                        >
+                                            <i data-lucide="settings-2"></i>
+                                            Manage
+                                        </a>
+
+                                        <form
+                                            method="POST"
+                                            action="{{ route('users.toggle-status', $user->id) }}"
+                                            onsubmit="return confirm('Are you sure you want to {{ $user->status === 'ACTIVE' ? 'deactivate' : 'activate' }} this user?')"
+                                            style="display: inline;"
+                                        >
+                                            @csrf
+                                            @if($user->status === 'ACTIVE')
+                                                <button
+                                                    type="submit"
+                                                    style="padding: 6px 12px; font-size: 12px; font-weight: 500; background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"
+                                                >
+                                                    <i data-lucide="user-x" style="width: 14px; height: 14px;"></i>
+                                                    Deactivate
+                                                </button>
+                                            @else
+                                                <button
+                                                    type="submit"
+                                                    style="padding: 6px 12px; font-size: 12px; font-weight: 500; background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"
+                                                >
+                                                    <i data-lucide="user-check" style="width: 14px; height: 14px;"></i>
+                                                    Activate
+                                                </button>
+                                            @endif
+                                        </form>
+                                    </div>
 
                                 @else
 
