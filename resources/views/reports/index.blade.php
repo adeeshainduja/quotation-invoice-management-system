@@ -135,6 +135,56 @@
             background: #e2e8f0;
             color: #475569;
         }
+        .report-action {
+            margin-top:20px;
+            padding-top:16px;
+            border-top:1px solid #eef2f7;
+        }
+
+
+        .view-report-btn {
+
+            height:42px;
+
+            display:flex;
+            align-items:center;
+            justify-content:center;
+
+            gap:8px;
+
+            width:100%;
+
+            background:#2563eb;
+
+            color:white;
+
+            text-decoration:none;
+
+            border-radius:8px;
+
+            font-size:14px;
+
+            font-weight:600;
+
+            transition:.25s ease;
+        }
+
+
+        .view-report-btn:hover {
+
+            background:#1d4ed8;
+
+            transform:translateY(-2px);
+
+        }
+
+
+        .view-report-btn svg {
+
+            width:17px;
+            height:17px;
+
+        }
     </style>
 </head>
 
@@ -237,161 +287,219 @@
         </section>
 
 
-        {{-- FUTURE-READY REPORT SECTIONS --}}
-        <div class="section-header">
-            <h2>Report Categories</h2>
-            <p>Future-ready reporting sections and detailed analytical views</p>
+        {{-- REPORT CATEGORIES --}}
+<div class="section-header">
+    <h2>Report Categories</h2>
+    <p>Future-ready reporting sections and detailed analytical views</p>
+</div>
+
+
+<section class="reports-grid">
+
+
+    {{-- Sales Reports --}}
+    <div class="report-category-card">
+
+        <div class="category-head">
+
+            <div class="category-icon blue">
+                <i data-lucide="trending-up"></i>
+            </div>
+
+            <div class="category-title">
+                <h3>Sales Reports</h3>
+                <p>
+                    Sales trends, revenue analysis,
+                    and business performance metrics.
+                </p>
+            </div>
+
         </div>
 
-        <section class="reports-grid">
 
-            {{-- 1. Sales Reports --}}
-            <div class="report-category-card">
-                <div>
-                    <div class="category-head">
-                        <div class="category-icon blue">
-                            <i data-lucide="trending-up"></i>
-                        </div>
-                        <div class="category-title">
-                            <h3>Sales Reports</h3>
-                            <p>Periodic sales trends, recurring revenue analysis, and sales performance metrics.</p>
-                        </div>
-                    </div>
+        <div class="report-action">
 
-                    <ul class="placeholder-list">
-                        <li class="placeholder-item">
-                            <span>Monthly Sales Summary</span>
-                            <span class="placeholder-badge">Placeholder</span>
-                        </li>
-                        <li class="placeholder-item">
-                            <span>Revenue Growth Analysis</span>
-                            <span class="placeholder-badge">Placeholder</span>
-                        </li>
-                    </ul>
-                </div>
+            <a href="{{ route('reports.quotations', $companyId ? ['company_id'=>$companyId] : []) }}"
+               class="view-report-btn">
+
+                <span>View Sales Report</span>
+
+                <i data-lucide="arrow-right"></i>
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+
+    {{-- Invoice Reports --}}
+    <div class="report-category-card">
+
+        <div class="category-head">
+
+            <div class="category-icon yellow">
+                <i data-lucide="receipt-text"></i>
             </div>
 
-            {{-- 2. Invoice Reports --}}
-            <div class="report-category-card">
-                <div>
-                    <div class="category-head">
-                        <div class="category-icon yellow">
-                            <i data-lucide="receipt-text"></i>
-                        </div>
-                        <div class="category-title">
-                            <h3>Invoice Reports</h3>
-                            <p>Invoice lifecycle, overdue aging reports, and status fulfillment breakdowns.</p>
-                        </div>
-                    </div>
+            <div class="category-title">
 
-                    <ul class="placeholder-list">
-                        <li class="placeholder-item">
-                            <a href="{{ route('reports.invoices', $companyId ? ['company_id' => $companyId] : []) }}" style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-decoration: none; color: inherit;">
-                                <span style="color: #2563eb; font-weight: 500;">Invoice Aging Report</span>
-                                <span class="placeholder-badge" style="background: #e0e7ff; color: #1d4ed8;">View Report →</span>
-                            </a>
-                        </li>
-                        <li class="placeholder-item">
-                            <a href="{{ route('reports.invoices', $companyId ? ['company_id' => $companyId] : []) }}" style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-decoration: none; color: inherit;">
-                                <span style="color: #2563eb; font-weight: 500;">Paid vs Unpaid Breakdown</span>
-                                <span class="placeholder-badge" style="background: #e0e7ff; color: #1d4ed8;">View Report →</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+                <h3>Invoice Reports</h3>
+
+                <p>
+                    Invoice lifecycle, overdue tracking,
+                    and payment status analysis.
+                </p>
+
             </div>
 
-            {{-- 3. Payment Reports --}}
-            <div class="report-category-card">
-                <div>
-                    <div class="category-head">
-                        <div class="category-icon green">
-                            <i data-lucide="credit-card"></i>
-                        </div>
-                        <div class="category-title">
-                            <h3>Payment Reports</h3>
-                            <p>Payment transaction histories, payment method distribution, and collection logs.</p>
-                        </div>
-                    </div>
+        </div>
 
-                    <ul class="placeholder-list">
-                        <li class="placeholder-item">
-                            <a href="{{ route('reports.payments', $companyId ? ['company_id' => $companyId] : []) }}" style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-decoration: none; color: inherit;">
-                                <span style="color: #2563eb; font-weight: 500;">Collection History</span>
-                                <span class="placeholder-badge" style="background: #e0e7ff; color: #1d4ed8;">View Report →</span>
-                            </a>
-                        </li>
-                        <li class="placeholder-item">
-                            <a href="{{ route('reports.payments', $companyId ? ['company_id' => $companyId] : []) }}" style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-decoration: none; color: inherit;">
-                                <span style="color: #2563eb; font-weight: 500;">Payment Methods Summary</span>
-                                <span class="placeholder-badge" style="background: #e0e7ff; color: #1d4ed8;">View Report →</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+
+        <div class="report-action">
+
+            <a href="{{ route('reports.invoices', $companyId ? ['company_id'=>$companyId] : []) }}"
+               class="view-report-btn">
+
+                <span>View Invoice Report</span>
+
+                <i data-lucide="arrow-right"></i>
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+
+
+    {{-- Payment Reports --}}
+    <div class="report-category-card">
+
+        <div class="category-head">
+
+            <div class="category-icon green">
+                <i data-lucide="credit-card"></i>
             </div>
 
-            {{-- 4. Customer Reports --}}
-            <div class="report-category-card">
-                <div>
-                    <div class="category-head">
-                        <div class="category-icon purple">
-                            <i data-lucide="users"></i>
-                        </div>
-                        <div class="category-title">
-                            <h3>Customer Reports</h3>
-                            <p>Top client revenue generators, customer balances, and client engagement logs.</p>
-                        </div>
-                    </div>
+            <div class="category-title">
 
-                    <ul class="placeholder-list">
-                        <li class="placeholder-item">
-                            <a href="{{ route('reports.customers', $companyId ? ['company_id' => $companyId] : []) }}" style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-decoration: none; color: inherit;">
-                                <span style="color: #2563eb; font-weight: 500;">Top Customers by Revenue</span>
-                                <span class="placeholder-badge" style="background: #e0e7ff; color: #1d4ed8;">View Report →</span>
-                            </a>
-                        </li>
-                        <li class="placeholder-item">
-                            <a href="{{ route('reports.customers', $companyId ? ['company_id' => $companyId] : []) }}" style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-decoration: none; color: inherit;">
-                                <span style="color: #2563eb; font-weight: 500;">Client Outstanding Balances</span>
-                                <span class="placeholder-badge" style="background: #e0e7ff; color: #1d4ed8;">View Report →</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+                <h3>Payment Reports</h3>
+
+                <p>
+                    Payment history, collections,
+                    and transaction analysis.
+                </p>
+
             </div>
 
-            {{-- 5. Quotation Reports --}}
-            <div class="report-category-card">
-                <div>
-                    <div class="category-head">
-                        <div class="category-icon blue">
-                            <i data-lucide="file-text"></i>
-                        </div>
-                        <div class="category-title">
-                            <h3>Quotation Reports</h3>
-                            <p>Quotation conversion pipeline, accepted vs rejected ratios, and expiry tracking.</p>
-                        </div>
-                    </div>
+        </div>
 
-                    <ul class="placeholder-list">
-                        <li class="placeholder-item">
-                            <a href="{{ route('reports.quotations', $companyId ? ['company_id' => $companyId] : []) }}" style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-decoration: none; color: inherit;">
-                                <span style="color: #2563eb; font-weight: 500;">Quotation Conversion Rate</span>
-                                <span class="placeholder-badge" style="background: #e0e7ff; color: #1d4ed8;">View Report →</span>
-                            </a>
-                        </li>
-                        <li class="placeholder-item">
-                            <a href="{{ route('reports.quotations', $companyId ? ['company_id' => $companyId] : []) }}" style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-decoration: none; color: inherit;">
-                                <span style="color: #2563eb; font-weight: 500;">Quotation Status Pipeline</span>
-                                <span class="placeholder-badge" style="background: #e0e7ff; color: #1d4ed8;">View Report →</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+
+        <div class="report-action">
+
+            <a href="{{ route('reports.payments', $companyId ? ['company_id'=>$companyId] : []) }}"
+               class="view-report-btn">
+
+                <span>View Payment Report</span>
+
+                <i data-lucide="arrow-right"></i>
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+
+
+    {{-- Customer Reports --}}
+    <div class="report-category-card">
+
+        <div class="category-head">
+
+            <div class="category-icon purple">
+                <i data-lucide="users"></i>
             </div>
 
-        </section>
+
+            <div class="category-title">
+
+                <h3>Customer Reports</h3>
+
+                <p>
+                    Customer revenue, balances,
+                    and customer activity.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="report-action">
+
+            <a href="{{ route('reports.customers', $companyId ? ['company_id'=>$companyId] : []) }}"
+               class="view-report-btn">
+
+                <span>View Customer Report</span>
+
+                <i data-lucide="arrow-right"></i>
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+
+
+
+    {{-- Quotation Reports --}}
+    <div class="report-category-card">
+
+        <div class="category-head">
+
+            <div class="category-icon blue">
+                <i data-lucide="file-text"></i>
+            </div>
+
+
+            <div class="category-title">
+
+                <h3>Quotation Reports</h3>
+
+                <p>
+                    Conversion rates, quotation status,
+                    and sales pipeline.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="report-action">
+
+            <a href="{{ route('reports.quotations', $companyId ? ['company_id'=>$companyId] : []) }}"
+               class="view-report-btn">
+
+                <span>View Quotation Report</span>
+
+                <i data-lucide="arrow-right"></i>
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+</section>
 
     </main>
 
