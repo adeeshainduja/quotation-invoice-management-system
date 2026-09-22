@@ -29,7 +29,7 @@
 @include('partials.sidebar')
 
 
-<div class="page">
+<div class="page content-wrapper">
     @include('partials.topbar')
 
     <main>
@@ -281,10 +281,8 @@
             <div class="table-footer">
 
                 <span>
-                    {{ $users->total() }} users
+                    Showing {{ $users->firstItem() ?? 0 }} to {{ $users->lastItem() ?? 0 }} of {{ $users->total() }} users
                 </span>
-
-                {{ $users->links() }}
 
             </div>
 
