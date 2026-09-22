@@ -922,7 +922,7 @@ class QuotationController extends Controller
 
         $quotation = (object) [
 
-            'quotation_number' => 'PREVIEW',
+            'quotation_number' => $request->input('quotation_number') ?: 'PREVIEW',
 
             'quotation_date' => $data['quotation_date'],
 
@@ -1089,10 +1089,11 @@ class QuotationController extends Controller
             ->where('company_id', $companyId)
             ->where('document_type', 'QUOTATION')
             ->where(function ($query) use ($quotation) {
-                $query->where('status', 'ACTIVE')
+                $query->where('is_default', 1)
                     ->orWhere('id', $quotation->template_id);
             })
-            ->orderBy('name')
+            ->orderByDesc('is_default')
+            ->orderBy('template_name')
             ->get();
 
         $items = DB::table('quotation_items')

@@ -1,5 +1,5 @@
 :root {
-    --sidebar-width: 258px;
+    --sidebar-width: 260px;
     --blue: #1677ff;
     --text: #10264a;
     --muted: #71829a;
@@ -10,13 +10,19 @@
     box-sizing: border-box;
 }
 
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.content-wrapper,
 .page {
-    margin-left: var(--sidebar-width) !important;
-    width: calc(100% - var(--sidebar-width)) !important;
+    margin-left: 260px;
+    width: calc(100% - 260px);
     min-width: 0;
     min-height: 100vh;
     position: relative;
-    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
 main {

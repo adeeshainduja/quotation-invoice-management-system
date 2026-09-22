@@ -18,7 +18,7 @@
 {{-- SHARED SIDEBAR --}}
 @include('partials.sidebar')
 
-<div class="page">
+<div class="page content-wrapper">
 
     @include('partials.topbar')
 
@@ -67,8 +67,9 @@
             id="quotationForm"
         >
             @csrf
-            @method('PUT')
-
+            <input type="hidden" name="_method" value="PUT" id="quotationFormMethod">
+            <input type="hidden" name="quotation_id" value="{{ $quotation->id }}">
+            <input type="hidden" name="quotation_number" value="{{ $quotation->quotation_number }}">
             <input type="hidden" name="company_id" value="{{ $quotation->company_id }}">
 
             {{-- TOP SECTION --}}
@@ -299,7 +300,7 @@
                     }
                 @endphp
 
-                <div class="table-wrap">
+                <div class="table-responsive table-wrap">
                     <table id="itemsTable">
                         <thead>
                         <tr>
@@ -491,6 +492,8 @@
                     formmethod="POST"
                     formtarget="_blank"
                     class="save-btn"
+                    id="previewBtn"
+                    onclick="var m=document.getElementById('quotationFormMethod'); if(m){ m.disabled=true; setTimeout(function(){ m.disabled=false; }, 1000); }"
                 >
                     <i data-lucide="eye"></i>
                     Preview
@@ -498,7 +501,11 @@
 
                 <button
                     type="submit"
+                    name="_method"
+                    value="PUT"
                     class="save-btn"
+                    id="saveBtn"
+                    onclick="var m=document.getElementById('quotationFormMethod'); if(m){ m.disabled=false; }"
                 >
                     <i data-lucide="save"></i>
                     Update Quotation
@@ -715,6 +722,21 @@
     updateCustomer();
     calculateTotals();
     lucide.createIcons();
+
+    const quotationForm = document.getElementById('quotationForm');
+    const quotationMethod = document.getElementById('quotationFormMethod');
+    if (quotationForm && quotationMethod) {
+        quotationForm.addEventListener('submit', function(e) {
+            if (e.submitter && (e.submitter.id === 'previewBtn' || (e.submitter.getAttribute('formaction') && e.submitter.getAttribute('formaction').includes('preview')))) {
+                quotationMethod.disabled = true;
+                setTimeout(function() {
+                    quotationMethod.disabled = false;
+                }, 1000);
+            } else {
+                quotationMethod.disabled = false;
+            }
+        });
+    }
 </script>
 
 </body>

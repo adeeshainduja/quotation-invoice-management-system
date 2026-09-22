@@ -298,16 +298,24 @@ textarea {
     width: 19px;
 }
 
-@media (max-width: 1000px) {
-
-    .top-grid,
-    .bottom-grid {
-        grid-template-columns: 1fr;
-    }
+.items-card {
+    min-width: 0;
+    max-width: 100%;
 }
 
-@media (max-width: 700px) {
+.table-responsive,
+.table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+}
 
+@media (max-width: 1024px) {
+
+    .top-grid,
+    .bottom-grid,
     .two-columns {
         grid-template-columns: 1fr;
     }
@@ -316,5 +324,23 @@ textarea {
         align-items: flex-start;
         flex-direction: column;
         gap: 13px;
+    }
+
+    .form-actions {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .cancel-btn,
+    .save-btn {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
     }
 }

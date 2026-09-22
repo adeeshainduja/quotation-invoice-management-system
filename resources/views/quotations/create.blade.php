@@ -19,7 +19,7 @@
 @include('partials.sidebar')
 
 
-<div class="page">
+<div class="page content-wrapper">
 
     @include('partials.topbar')
 
@@ -420,7 +420,7 @@
                 </div>
 
 
-                <div class="table-wrap">
+                <div class="table-responsive table-wrap">
 
                     <table id="itemsTable">
 

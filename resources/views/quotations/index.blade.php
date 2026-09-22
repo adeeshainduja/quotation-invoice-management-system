@@ -30,7 +30,7 @@
 @endphp
 
 
-<div class="page">
+<div class="page content-wrapper">
 
     @include('partials.topbar')
 
@@ -572,9 +572,6 @@
                     quotations
 
                 </span>
-
-
-                {{ $quotations->links() }}
 
             </div>
 
