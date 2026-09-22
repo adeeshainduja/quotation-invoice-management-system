@@ -1,5 +1,5 @@
 :root {
-    --sidebar-width: 258px;
+    --sidebar-width: 260px;
     --blue: #2563eb;
     --text: #0f172a;
     --muted: #64748b;
@@ -18,90 +18,14 @@ body {
     font-family: Inter, "Segoe UI", Arial, sans-serif;
 }
 
-.page {
-    margin-left: var(--sidebar-width) !important;
-    width: calc(100% - var(--sidebar-width)) !important;
+.page,
+.content-wrapper {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
     min-height: 100vh;
 }
 
-.topbar {
-    height: 72px;
-    padding: 0 28px;
-    background: #fff;
-    border-bottom: 1px solid var(--border);
 
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.topbar-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.company-select {
-    width: 220px;
-    height: 40px;
-
-    padding: 0 12px;
-
-    border: 1px solid #d7deea;
-    border-radius: 8px;
-
-    background: #fff;
-}
-
-.notification {
-    position: relative;
-}
-
-.notification span {
-    position: absolute;
-
-    width: 7px;
-    height: 7px;
-
-    right: -2px;
-    top: -2px;
-
-    border-radius: 50%;
-
-    background: #ef4444;
-}
-
-.user {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-}
-
-.user strong {
-    display: block;
-    font-size: 13px;
-}
-
-.user small {
-    display: block;
-    color: var(--muted);
-    font-size: 11px;
-}
-
-.avatar {
-    width: 40px;
-    height: 40px;
-
-    border-radius: 50%;
-
-    display: grid;
-    place-items: center;
-
-    background: #315be8;
-    color: #fff;
-
-    font-weight: 700;
-}
 
 main {
     padding: 24px 28px 40px;
@@ -580,9 +504,10 @@ tbody tr:hover {
     }
 }
 
-@media (max-width: 850px) {
+@media (max-width: 1024px) {
 
-    .page {
+    .page,
+    .content-wrapper {
         margin-left: 0 !important;
         width: 100% !important;
     }
@@ -591,17 +516,9 @@ tbody tr:hover {
         padding: 18px;
     }
 
-    .topbar {
-        padding: 0 18px;
-    }
-
     .stats-grid,
     .filters {
         grid-template-columns: 1fr;
-    }
-
-    .company-select {
-        width: 170px;
     }
 
     .table-footer {
