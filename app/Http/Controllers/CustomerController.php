@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Customer;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -189,5 +190,87 @@ class CustomerController extends Controller
         return redirect()
             ->route('customers.show', ['id' => $id, 'company_id' => $data['company_id']])
             ->with('success', 'Customer created successfully.');
+    }
+
+    public function edit($id)
+    {
+        $user = auth()->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
+        $customer = Customer::findOrFail($id);
+        abort_if(! $user->hasCompanyAccess($customer->company_id), 403, 'Unauthorized company access.');
+
+        $companyList = $user->isAdmin()
+            ? DB::table('companies')
+                ->where('status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['id', 'name'])
+            : $user->accessibleCompanies()
+                ->where('companies.status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['companies.id', 'companies.name']);
+
+        $companyId = $customer->company_id;
+
+        return view(
+            'customers.edit',
+            compact('customer', 'companyList', 'companyId')
+        );
+    }
+
+    public function update(Request $request, $id)
+    {
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
+        $customer = Customer::findOrFail($id);
+        abort_if(! $user->hasCompanyAccess($customer->company_id), 403, 'Unauthorized company access.');
+
+        $data = $request->validate([
+            'company_id' => 'required|exists:companies,id',
+            'customer_name' => 'required|string|max:255',
+            'business_name' => 'required|string|max:255',
+            'registration_number' => 'nullable|string|max:100',
+            'vat_number' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:50',
+            'address_line_1' => 'required|string|max:255',
+            'address_line_2' => 'nullable|string|max:255',
+            'city' => 'required|string|max:100',
+            'country' => 'required|string|max:100',
+            'notes' => 'nullable|string',
+            'status' => 'required|in:ACTIVE,INACTIVE',
+        ]);
+
+        abort_if(! $user->hasCompanyAccess($data['company_id']), 403, 'Unauthorized company access.');
+
+        $oldData = [
+            'customer_name' => $customer->customer_name,
+            'business_name' => $customer->business_name,
+            'email' => $customer->email,
+            'phone' => $customer->phone,
+            'status' => $customer->status,
+        ];
+
+        $customer->update($data);
+
+        ActivityLogger::log(
+            'UPDATE',
+            'Customer',
+            $customer->id,
+            $customer->company_id,
+            $oldData,
+            [
+                'customer_name' => $data['customer_name'],
+                'business_name' => $data['business_name'],
+                'email' => $data['email'] ?? null,
+                'phone' => $data['phone'] ?? null,
+                'status' => $data['status'],
+            ]
+        );
+
+        return redirect()
+            ->route('customers.show', ['id' => $customer->id, 'company_id' => $customer->company_id])
+            ->with('success', 'Customer updated successfully.');
     }
 }

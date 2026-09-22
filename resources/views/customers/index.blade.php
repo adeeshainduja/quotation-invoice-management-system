@@ -262,26 +262,12 @@
 
 
                                     {{-- EDIT --}}
-                                    @if(Route::has('customers.edit'))
-
-                                        <a
-                                            href="{{ route('customers.edit', $customer->id) }}"
-                                            title="Edit"
-                                        >
-                                            <i data-lucide="pencil"></i>
-                                        </a>
-
-                                    @else
-
-                                        <button
-                                            type="button"
-                                            title="Edit not available yet"
-                                            disabled
-                                        >
-                                            <i data-lucide="pencil"></i>
-                                        </button>
-
-                                    @endif
+                                    <a
+                                        href="{{ route('customers.edit', $customer->id) }}"
+                                        title="Edit"
+                                    >
+                                        <i data-lucide="pencil"></i>
+                                    </a>
 
 
                                     <button
