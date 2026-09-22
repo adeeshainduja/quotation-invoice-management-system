@@ -679,6 +679,13 @@ class QuotationController extends Controller
             )
             ->first();
 
+        if (! $customer && ! empty($quotation->customer_snapshot)) {
+            $customer = json_decode($quotation->customer_snapshot);
+        }
+        if (! $company && ! empty($quotation->company_snapshot)) {
+            $company = json_decode($quotation->company_snapshot);
+        }
+
         $items = DB::table('quotation_items')
             ->where(
                 'quotation_id',
@@ -695,12 +702,24 @@ class QuotationController extends Controller
                 )
                 ->first();
 
+        if (! $template && ! empty($quotation->template_snapshot)) {
+            $template = json_decode($quotation->template_snapshot);
+        }
+
+        $convertedInvoice = null;
+        if (! empty($quotation->converted_invoice_id)) {
+            $convertedInvoice = DB::table('invoices')
+                ->where('id', $quotation->converted_invoice_id)
+                ->first();
+        }
+
         return view('quotations.show', compact(
             'quotation',
             'company',
             'customer',
             'items',
-            'template'
+            'template',
+            'convertedInvoice'
         ));
     }
 
@@ -986,6 +1005,16 @@ class QuotationController extends Controller
             : ((float) ($quotation->vat_amount ?? $quotation->tax_amount ?? 0) > 0);
         $templateView = $isVatEnabled ? 'pdf.quotations.tax-quotation' : 'pdf.quotations.normal';
 
+        if (! $customer && ! empty($quotation->customer_snapshot)) {
+            $customer = json_decode($quotation->customer_snapshot);
+        }
+        if (! $company && ! empty($quotation->company_snapshot)) {
+            $company = json_decode($quotation->company_snapshot);
+        }
+        if (! $template && ! empty($quotation->template_snapshot)) {
+            $template = json_decode($quotation->template_snapshot);
+        }
+
         $pdf = Pdf::loadView(
             $templateView,
             compact(
@@ -1002,5 +1031,561 @@ class QuotationController extends Controller
             $quotation->quotation_number
             .'.pdf'
         );
+    }
+
+    public function edit(Request $request, $id)
+    {
+        $quotation = DB::table('quotations')->where('id', $id)->first();
+        abort_if(! $quotation, 404);
+
+        if ($quotation->status === 'CONVERTED') {
+            return redirect()
+                ->route('quotations.show', $id)
+                ->with('error', 'Cannot edit a quotation that has already been converted to an invoice.');
+        }
+
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+        abort_if(! $user->hasCompanyAccess($quotation->company_id), 403, 'Unauthorized company access.');
+
+        $companyId = $quotation->company_id;
+
+        $companyList = $user->isAdmin()
+            ? DB::table('companies')
+                ->where('status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['id', 'name'])
+            : $user->accessibleCompanies()
+                ->where('companies.status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['companies.id', 'companies.name']);
+
+        $company = DB::table('companies')->where('id', $companyId)->first();
+
+        $customers = DB::table('customers')
+            ->where('company_id', $companyId)
+            ->where(function ($query) use ($quotation) {
+                $query->where('status', 'ACTIVE')
+                    ->orWhere('id', $quotation->customer_id);
+            })
+            ->orderBy('business_name')
+            ->get();
+
+        $templates = DB::table('company_templates')
+            ->where('company_id', $companyId)
+            ->where('document_type', 'QUOTATION')
+            ->where(function ($query) use ($quotation) {
+                $query->where('status', 'ACTIVE')
+                    ->orWhere('id', $quotation->template_id);
+            })
+            ->orderBy('name')
+            ->get();
+
+        $items = DB::table('quotation_items')
+            ->where('quotation_id', $id)
+            ->orderBy('sort_order')
+            ->get();
+
+        return view('quotations.edit', compact(
+            'quotation',
+            'company',
+            'companyList',
+            'companyId',
+            'customers',
+            'templates',
+            'items'
+        ));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $quotation = DB::table('quotations')->where('id', $id)->first();
+        abort_if(! $quotation, 404);
+
+        if ($quotation->status === 'CONVERTED') {
+            return redirect()
+                ->route('quotations.show', $id)
+                ->with('error', 'Cannot edit a quotation that has already been converted to an invoice.');
+        }
+
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+        abort_if(! $user->hasCompanyAccess($quotation->company_id), 403, 'Unauthorized company access.');
+
+        $data = $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'template_id' => 'required|exists:company_templates,id',
+            'quotation_date' => 'required|date',
+            'expiry_date' => 'nullable|date',
+            'reference' => 'nullable|string|max:100',
+            'notes' => 'nullable|string',
+            'terms_conditions' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.item_name' => 'required|string|max:255',
+            'items.*.description' => 'nullable|string',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.discount' => 'nullable|numeric|min:0|max:100',
+            'items.*.tax' => 'nullable|numeric|min:0|max:100',
+        ]);
+
+        $company = DB::table('companies')->where('id', $quotation->company_id)->first();
+        $customer = DB::table('customers')
+            ->where('id', $data['customer_id'])
+            ->where('company_id', $quotation->company_id)
+            ->first();
+        $template = DB::table('company_templates')
+            ->where('id', $data['template_id'])
+            ->where('company_id', $quotation->company_id)
+            ->where('document_type', 'QUOTATION')
+            ->first();
+
+        abort_if(! $company || ! $customer || ! $template, 404);
+
+        $isVatEnabled = (bool) ($company->vat_enabled ?? $company->vat_registered ?? false);
+        $companyVatRate = $isVatEnabled ? (float) ($company->tax_percentage ?? $company->vat_percentage ?? 0) : 0;
+
+        $subtotal = 0;
+        $discountTotal = 0;
+        $taxTotal = 0;
+        $items = [];
+
+        foreach ($data['items'] as $i => $item) {
+            $qty = (float) $item['quantity'];
+            $price = (float) $item['unit_price'];
+            $discount = (float) ($item['discount'] ?? 0);
+            $tax = $isVatEnabled ? (float) ($item['tax'] ?? $companyVatRate) : 0;
+
+            $lineSubtotal = round($qty * $price, 2);
+            $discountAmount = round($lineSubtotal * $discount / 100, 2);
+            $taxable = $lineSubtotal - $discountAmount;
+            $taxAmount = round($taxable * $tax / 100, 2);
+            $lineTotal = round($taxable + $taxAmount, 2);
+
+            $subtotal += $lineSubtotal;
+            $discountTotal += $discountAmount;
+            $taxTotal += $taxAmount;
+
+            $items[] = [
+                'sort_order' => $i + 1,
+                'item_name' => $item['item_name'],
+                'description' => $item['description'] ?? null,
+                'quantity' => $qty,
+                'unit' => null,
+                'unit_price' => $price,
+                'discount_type' => $discount > 0 ? 'PERCENTAGE' : 'NONE',
+                'discount_value' => $discount,
+                'discount_amount' => $discountAmount,
+                'tax_percentage' => $tax,
+                'tax_amount' => $taxAmount,
+                'line_total' => $lineTotal,
+            ];
+        }
+
+        $grandTotal = round($subtotal - $discountTotal + $taxTotal, 2);
+
+        DB::transaction(function () use ($id, $data, $customer, $template, $subtotal, $discountTotal, $taxTotal, $grandTotal, $isVatEnabled, $companyVatRate, $items, $quotation) {
+            DB::table('quotations')
+                ->where('id', $id)
+                ->update([
+                    'customer_id' => $customer->id,
+                    'quotation_date' => $data['quotation_date'],
+                    'expiry_date' => $data['expiry_date'] ?? null,
+                    'reference' => $data['reference'] ?? null,
+                    'subtotal' => $subtotal,
+                    'discount_type' => $discountTotal > 0 ? 'FIXED' : 'NONE',
+                    'discount_value' => $discountTotal,
+                    'discount_amount' => $discountTotal,
+                    'tax_percentage' => $isVatEnabled ? $companyVatRate : 0,
+                    'tax_amount' => $taxTotal,
+                    'vat_enabled' => $isVatEnabled,
+                    'vat_percentage' => $isVatEnabled ? $companyVatRate : 0,
+                    'vat_amount' => $taxTotal,
+                    'grand_total' => $grandTotal,
+                    'notes' => $data['notes'] ?? null,
+                    'terms_conditions' => $data['terms_conditions'] ?? null,
+                    'template_id' => $template->id,
+                    'customer_snapshot' => json_encode($customer, JSON_UNESCAPED_UNICODE),
+                    'template_snapshot' => json_encode($template, JSON_UNESCAPED_UNICODE),
+                    'updated_at' => now(),
+                ]);
+
+            DB::table('quotation_items')->where('quotation_id', $id)->delete();
+
+            foreach ($items as $item) {
+                DB::table('quotation_items')->insert([
+                    'quotation_id' => $id,
+                    ...$item,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            DB::table('activity_logs')->insert([
+                'user_id' => auth()->id(),
+                'company_id' => $quotation->company_id,
+                'entity_type' => 'QUOTATION',
+                'entity_id' => $id,
+                'action' => 'QUOTATION_UPDATED',
+                'old_data' => json_encode(['grand_total' => $quotation->grand_total]),
+                'new_data' => json_encode(['grand_total' => $grandTotal]),
+                'created_at' => now(),
+            ]);
+        });
+
+        return redirect()
+            ->route('quotations.show', $id)
+            ->with('success', 'Quotation updated successfully.');
+    }
+
+    public function clone(Request $request, $id)
+    {
+        $quotation = DB::table('quotations')->where('id', $id)->first();
+        abort_if(! $quotation, 404);
+
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+        abort_if(! $user->hasCompanyAccess($quotation->company_id), 403, 'Unauthorized company access.');
+
+        $company = DB::table('companies')->where('id', $quotation->company_id)->first();
+        abort_if(! $company, 404);
+
+        $items = DB::table('quotation_items')
+            ->where('quotation_id', $id)
+            ->orderBy('sort_order')
+            ->get();
+
+        $newQuotationId = DB::transaction(function () use ($quotation, $company, $items) {
+            $number = rtrim($company->quotation_prefix, '-')
+                .'-'
+                .now()->format('Y')
+                .'-'
+                .str_pad(
+                    $company->quotation_next_number,
+                    4,
+                    '0',
+                    STR_PAD_LEFT
+                );
+
+            $newId = DB::table('quotations')->insertGetId([
+                'company_id' => $quotation->company_id,
+                'customer_id' => $quotation->customer_id,
+                'quotation_number' => $number,
+                'quotation_date' => now()->toDateString(),
+                'expiry_date' => $quotation->expiry_date ? now()->addDays(30)->toDateString() : null,
+                'reference' => null,
+                'subtotal' => $quotation->subtotal,
+                'discount_type' => $quotation->discount_type,
+                'discount_value' => $quotation->discount_value,
+                'discount_amount' => $quotation->discount_amount,
+                'tax_percentage' => $quotation->tax_percentage,
+                'tax_amount' => $quotation->tax_amount,
+                'vat_enabled' => $quotation->vat_enabled,
+                'vat_percentage' => $quotation->vat_percentage,
+                'vat_amount' => $quotation->vat_amount,
+                'additional_charges' => $quotation->additional_charges ?? 0,
+                'grand_total' => $quotation->grand_total,
+                'status' => 'DRAFT',
+                'notes' => $quotation->notes,
+                'terms_conditions' => $quotation->terms_conditions,
+                'template_id' => $quotation->template_id,
+                'company_snapshot' => $quotation->company_snapshot,
+                'customer_snapshot' => $quotation->customer_snapshot,
+                'template_snapshot' => $quotation->template_snapshot,
+                'converted_invoice_id' => null,
+                'created_by' => auth()->id(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            foreach ($items as $item) {
+                DB::table('quotation_items')->insert([
+                    'quotation_id' => $newId,
+                    'sort_order' => $item->sort_order,
+                    'item_name' => $item->item_name,
+                    'description' => $item->description,
+                    'quantity' => $item->quantity,
+                    'unit' => $item->unit,
+                    'unit_price' => $item->unit_price,
+                    'discount_type' => $item->discount_type,
+                    'discount_value' => $item->discount_value,
+                    'discount_amount' => $item->discount_amount,
+                    'tax_percentage' => $item->tax_percentage,
+                    'tax_amount' => $item->tax_amount,
+                    'line_total' => $item->line_total,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            DB::table('companies')
+                ->where('id', $company->id)
+                ->update([
+                    'quotation_next_number' => $company->quotation_next_number + 1,
+                ]);
+
+            DB::table('activity_logs')->insert([
+                'user_id' => auth()->id(),
+                'company_id' => $quotation->company_id,
+                'entity_type' => 'QUOTATION',
+                'entity_id' => $newId,
+                'action' => 'QUOTATION_CLONED',
+                'old_data' => json_encode(['cloned_from_id' => $quotation->id, 'cloned_from_number' => $quotation->quotation_number]),
+                'new_data' => json_encode(['quotation_number' => $number, 'status' => 'DRAFT']),
+                'created_at' => now(),
+            ]);
+
+            return $newId;
+        });
+
+        return redirect()
+            ->route('quotations.show', $newQuotationId)
+            ->with('success', 'Quotation cloned successfully as DRAFT.');
+    }
+
+    public function markAsSent(Request $request, $id)
+    {
+        $quotation = DB::table('quotations')->where('id', $id)->first();
+        abort_if(! $quotation, 404);
+
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+        abort_if(! $user->hasCompanyAccess($quotation->company_id), 403, 'Unauthorized company access.');
+
+        if ($quotation->status === 'CONVERTED') {
+            return back()->with('error', 'Cannot change status of a converted quotation.');
+        }
+
+        DB::table('quotations')
+            ->where('id', $id)
+            ->update([
+                'status' => 'SENT',
+                'updated_at' => now(),
+            ]);
+
+        DB::table('activity_logs')->insert([
+            'user_id' => auth()->id(),
+            'company_id' => $quotation->company_id,
+            'entity_type' => 'QUOTATION',
+            'entity_id' => $id,
+            'action' => 'QUOTATION_SENT',
+            'old_data' => json_encode(['status' => $quotation->status]),
+            'new_data' => json_encode(['status' => 'SENT']),
+            'created_at' => now(),
+        ]);
+
+        return back()->with('success', 'Quotation marked as sent.');
+    }
+
+    public function accept(Request $request, $id)
+    {
+        $quotation = DB::table('quotations')->where('id', $id)->first();
+        abort_if(! $quotation, 404);
+
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+        abort_if(! $user->hasCompanyAccess($quotation->company_id), 403, 'Unauthorized company access.');
+
+        if ($quotation->status === 'CONVERTED') {
+            return back()->with('error', 'Cannot change status of a converted quotation.');
+        }
+
+        DB::table('quotations')
+            ->where('id', $id)
+            ->update([
+                'status' => 'ACCEPTED',
+                'updated_at' => now(),
+            ]);
+
+        DB::table('activity_logs')->insert([
+            'user_id' => auth()->id(),
+            'company_id' => $quotation->company_id,
+            'entity_type' => 'QUOTATION',
+            'entity_id' => $id,
+            'action' => 'QUOTATION_ACCEPTED',
+            'old_data' => json_encode(['status' => $quotation->status]),
+            'new_data' => json_encode(['status' => 'ACCEPTED']),
+            'created_at' => now(),
+        ]);
+
+        return back()->with('success', 'Quotation marked as accepted.');
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $quotation = DB::table('quotations')->where('id', $id)->first();
+        abort_if(! $quotation, 404);
+
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+        abort_if(! $user->hasCompanyAccess($quotation->company_id), 403, 'Unauthorized company access.');
+
+        if ($quotation->status === 'CONVERTED') {
+            return back()->with('error', 'Cannot change status of a converted quotation.');
+        }
+
+        DB::table('quotations')
+            ->where('id', $id)
+            ->update([
+                'status' => 'REJECTED',
+                'updated_at' => now(),
+            ]);
+
+        DB::table('activity_logs')->insert([
+            'user_id' => auth()->id(),
+            'company_id' => $quotation->company_id,
+            'entity_type' => 'QUOTATION',
+            'entity_id' => $id,
+            'action' => 'QUOTATION_REJECTED',
+            'old_data' => json_encode(['status' => $quotation->status]),
+            'new_data' => json_encode(['status' => 'REJECTED']),
+            'created_at' => now(),
+        ]);
+
+        return back()->with('success', 'Quotation marked as rejected.');
+    }
+
+    public function convertToInvoice(Request $request, $id)
+    {
+        $quotation = DB::table('quotations')->where('id', $id)->first();
+        abort_if(! $quotation, 404);
+
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+        abort_if(! $user->hasCompanyAccess($quotation->company_id), 403, 'Unauthorized company access.');
+
+        if ($quotation->status !== 'ACCEPTED') {
+            return redirect()
+                ->route('quotations.show', $id)
+                ->with('error', 'Only accepted quotations can be converted to invoices.');
+        }
+
+        if (! empty($quotation->converted_invoice_id)) {
+            return redirect()
+                ->route('invoices.show', $quotation->converted_invoice_id)
+                ->with('info', 'This quotation has already been converted to an invoice.');
+        }
+
+        $company = DB::table('companies')->where('id', $quotation->company_id)->first();
+        abort_if(! $company, 404);
+
+        $customer = DB::table('customers')->where('id', $quotation->customer_id)->first();
+
+        // Find an invoice template for this company
+        $invoiceTemplate = DB::table('company_templates')
+            ->where('company_id', $quotation->company_id)
+            ->where('document_type', 'INVOICE')
+            ->where('status', 'ACTIVE')
+            ->first()
+            ?: DB::table('company_templates')
+                ->where('company_id', $quotation->company_id)
+                ->where('document_type', 'INVOICE')
+                ->first();
+
+        $templateId = $invoiceTemplate ? $invoiceTemplate->id : $quotation->template_id;
+
+        $items = DB::table('quotation_items')
+            ->where('quotation_id', $id)
+            ->orderBy('sort_order')
+            ->get();
+
+        $invoiceId = DB::transaction(function () use ($quotation, $company, $customer, $templateId, $invoiceTemplate, $items, $id) {
+            $invoiceNumber = rtrim($company->invoice_prefix, '-')
+                .'-'
+                .now()->format('Y')
+                .'-'
+                .str_pad(
+                    $company->invoice_next_number,
+                    4,
+                    '0',
+                    STR_PAD_LEFT
+                );
+
+            $newInvoiceId = DB::table('invoices')->insertGetId([
+                'company_id' => $quotation->company_id,
+                'customer_id' => $quotation->customer_id,
+                'quotation_id' => $quotation->id,
+                'invoice_number' => $invoiceNumber,
+                'invoice_date' => now()->toDateString(),
+                'due_date' => now()->addDays(14)->toDateString(),
+                'subject' => 'Invoice for Quotation '.$quotation->quotation_number,
+                'reference' => $quotation->quotation_number,
+                'subtotal' => $quotation->subtotal,
+                'discount_type' => $quotation->discount_type,
+                'discount_value' => $quotation->discount_value,
+                'discount_amount' => $quotation->discount_amount,
+                'tax_percentage' => $quotation->tax_percentage,
+                'tax_amount' => $quotation->tax_amount,
+                'vat_enabled' => $quotation->vat_enabled,
+                'vat_percentage' => $quotation->vat_percentage,
+                'vat_amount' => $quotation->vat_amount,
+                'additional_charges' => $quotation->additional_charges ?? 0,
+                'grand_total' => $quotation->grand_total,
+                'amount_paid' => 0.00,
+                'balance_amount' => $quotation->grand_total,
+                'status' => 'DRAFT',
+                'notes' => $quotation->notes,
+                'terms_conditions' => $quotation->terms_conditions,
+                'template_id' => $templateId,
+                'company_snapshot' => ! empty($quotation->company_snapshot) ? $quotation->company_snapshot : json_encode($company, JSON_UNESCAPED_UNICODE),
+                'customer_snapshot' => ! empty($quotation->customer_snapshot) ? $quotation->customer_snapshot : json_encode($customer, JSON_UNESCAPED_UNICODE),
+                'template_snapshot' => $invoiceTemplate ? json_encode($invoiceTemplate, JSON_UNESCAPED_UNICODE) : $quotation->template_snapshot,
+                'created_by' => auth()->id(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            foreach ($items as $item) {
+                DB::table('invoice_items')->insert([
+                    'invoice_id' => $newInvoiceId,
+                    'source_quotation_item_id' => $item->id,
+                    'sort_order' => $item->sort_order,
+                    'item_name' => $item->item_name,
+                    'description' => $item->description,
+                    'quantity' => $item->quantity,
+                    'unit' => $item->unit,
+                    'unit_price' => $item->unit_price,
+                    'discount_type' => $item->discount_type,
+                    'discount_value' => $item->discount_value,
+                    'discount_amount' => $item->discount_amount,
+                    'tax_percentage' => $item->tax_percentage,
+                    'tax_amount' => $item->tax_amount,
+                    'line_total' => $item->line_total,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            DB::table('companies')
+                ->where('id', $company->id)
+                ->update([
+                    'invoice_next_number' => $company->invoice_next_number + 1,
+                ]);
+
+            DB::table('quotations')
+                ->where('id', $id)
+                ->update([
+                    'status' => 'CONVERTED',
+                    'converted_invoice_id' => $newInvoiceId,
+                    'updated_at' => now(),
+                ]);
+
+            DB::table('activity_logs')->insert([
+                'user_id' => auth()->id(),
+                'company_id' => $quotation->company_id,
+                'entity_type' => 'QUOTATION',
+                'entity_id' => $id,
+                'action' => 'QUOTATION_CONVERTED',
+                'old_data' => json_encode(['status' => 'ACCEPTED']),
+                'new_data' => json_encode(['status' => 'CONVERTED', 'invoice_id' => $newInvoiceId, 'invoice_number' => $invoiceNumber]),
+                'created_at' => now(),
+            ]);
+
+            return $newInvoiceId;
+        });
+
+        return redirect()
+            ->route('invoices.show', $invoiceId)
+            ->with('success', 'Quotation successfully converted to invoice.');
     }
 }

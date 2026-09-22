@@ -36,6 +36,7 @@ class Quotation extends Model
         'notes',
         'terms_conditions',
         'template_id',
+        'converted_invoice_id',
         'company_snapshot',
         'customer_snapshot',
         'template_snapshot',
@@ -88,5 +89,10 @@ class Quotation extends Model
     public function invoice(): HasOne
     {
         return $this->hasOne(Invoice::class);
+    }
+
+    public function convertedInvoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'converted_invoice_id');
     }
 }

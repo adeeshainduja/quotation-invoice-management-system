@@ -71,7 +71,7 @@
                     Back
                 </a>
 
-                @if(Route::has('quotations.edit'))
+                @if(Route::has('quotations.edit') && $quotation->status !== 'CONVERTED')
 
                     <a href="{{ route('quotations.edit', $quotation->id) }}">
                         <i data-lucide="pencil"></i>
@@ -83,6 +83,27 @@
             </div>
 
         </div>
+
+        @if(session('success'))
+            <div style="margin-bottom: 16px; padding: 12px 16px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 7px; color: #065f46; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="check-circle" style="width: 18px; height: 18px; color: #059669;"></i>
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div style="margin-bottom: 16px; padding: 12px 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 7px; color: #991b1b; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="alert-triangle" style="width: 18px; height: 18px; color: #dc2626;"></i>
+                {{ session('error') }}
+            </div>
+        @endif
+
+        @if(session('info'))
+            <div style="margin-bottom: 16px; padding: 12px 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 7px; color: #1e40af; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="info" style="width: 18px; height: 18px; color: #2563eb;"></i>
+                {{ session('info') }}
+            </div>
+        @endif
 
 
         {{-- MAIN INFORMATION --}}
@@ -373,10 +394,13 @@
 
             <div class="action-buttons">
 
-                <button type="button">
-                    <i data-lucide="copy"></i>
-                    Clone
-                </button>
+                <form method="POST" action="{{ route('quotations.clone', $quotation->id) }}" style="display:inline;">
+                    @csrf
+                    <button type="submit">
+                        <i data-lucide="copy"></i>
+                        Clone
+                    </button>
+                </form>
 
                 <button
                     type="button"
@@ -387,33 +411,52 @@
                 </button>
 
                 @if($quotation->status === 'DRAFT')
-
-                    <button type="button" class="primary">
-                        Mark as Sent
-                    </button>
-
+                    <form method="POST" action="{{ route('quotations.send', $quotation->id) }}" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="primary">
+                            <i data-lucide="send"></i>
+                            Mark as Sent
+                        </button>
+                    </form>
                 @endif
-
 
                 @if($quotation->status === 'SENT')
+                    <form method="POST" action="{{ route('quotations.accept', $quotation->id) }}" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="accept">
+                            <i data-lucide="check"></i>
+                            Accept
+                        </button>
+                    </form>
 
-                    <button type="button" class="accept">
-                        Accept
-                    </button>
-
-                    <button type="button" class="reject">
-                        Reject
-                    </button>
-
+                    <form method="POST" action="{{ route('quotations.reject', $quotation->id) }}" onsubmit="return confirm('Are you sure you want to reject this quotation?');" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="reject">
+                            <i data-lucide="x"></i>
+                            Reject
+                        </button>
+                    </form>
                 @endif
 
-
                 @if($quotation->status === 'ACCEPTED')
+                    <form method="POST" action="{{ route('quotations.convert', $quotation->id) }}" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="primary">
+                            <i data-lucide="receipt"></i>
+                            Convert to Invoice
+                        </button>
+                    </form>
+                @endif
 
-                    <button type="button" class="primary">
-                        Convert to Invoice
-                    </button>
-
+                @if(!empty($quotation->converted_invoice_id))
+                    <a
+                        href="{{ route('invoices.show', $quotation->converted_invoice_id) }}"
+                        class="primary"
+                        style="display: flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 15px; border: 1px solid #1474e8; border-radius: 7px; background: #1474e8; color: white; text-decoration: none; font-size: 13px; font-weight: 500;"
+                    >
+                        <i data-lucide="arrow-right"></i>
+                        View Invoice
+                    </a>
                 @endif
 
             </div>

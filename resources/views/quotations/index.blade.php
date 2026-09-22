@@ -454,7 +454,7 @@
 
                                     @if($quotation->status !== 'CONVERTED')
 
-                                        <a href="#">
+                                        <a href="{{ route('quotations.edit', $quotation->id) }}">
                                             <i data-lucide="pencil"></i>
                                             Edit
                                         </a>
