@@ -54,6 +54,10 @@ class PermissionSeeder extends Seeder
 
             // Settings
             ['key' => 'settings.view', 'name' => 'View Settings', 'module' => 'Settings'],
+
+            // Reports
+            ['key' => 'reports.view', 'name' => 'View Reports', 'module' => 'Reports'],
+            ['key' => 'reports.invoice.view', 'name' => 'View Invoice Reports', 'module' => 'Reports'],
         ];
 
         foreach ($permissions as $permission) {

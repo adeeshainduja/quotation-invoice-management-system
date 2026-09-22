@@ -1,19 +1,18 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\TemplateController;
-use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\UserController;
-
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +25,6 @@ Route::get('/', function () {
         ? redirect()->route('dashboard')
         : redirect()->route('login');
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -42,7 +40,6 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])
         ->name('login.submit');
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -68,7 +65,6 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:dashboard.view')
         ->name('create-new');
 
-
     /*
     |--------------------------------------------------------------------------
     | Companies
@@ -86,7 +82,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/companies', [CompanyController::class, 'store'])
         ->middleware('permission:companies.create')
         ->name('companies.store');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -110,7 +105,6 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('id')
         ->middleware('permission:customers.view')
         ->name('customers.show');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -144,7 +138,6 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:quotations.view')
         ->name('quotations.show');
 
-
     /*
     |--------------------------------------------------------------------------
     | Invoices
@@ -167,11 +160,15 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:invoices.create')
         ->name('invoices.store');
 
+    Route::get('/invoices/{id}', [InvoiceController::class, 'show'])
+        ->whereNumber('id')
+        ->middleware('permission:invoices.view')
+        ->name('invoices.show');
+
     Route::get('/invoices/{id}/pdf', [InvoiceController::class, 'downloadPdf'])
         ->whereNumber('id')
         ->middleware('permission:invoices.pdf')
         ->name('invoices.pdf');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -182,7 +179,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/payments', [PaymentController::class, 'index'])
         ->middleware('permission:payments.view')
         ->name('payments.index');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -207,6 +203,15 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:templates.view')
         ->name('templates.show');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Reports
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/reports', [ReportController::class, 'index'])
+        ->middleware('permission:reports.view')
+        ->name('reports.index');
 
     /*
     |--------------------------------------------------------------------------
@@ -222,7 +227,6 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('id')
         ->middleware('permission:activity_logs.view')
         ->name('activity-logs.show');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -241,7 +245,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/password', [SettingsController::class, 'updatePassword'])
         ->middleware('permission:settings.view')
         ->name('settings.password');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -268,7 +271,6 @@ Route::middleware('auth')->group(function () {
             ->whereNumber('id')
             ->name('users.update');
     });
-
 
     /*
     |--------------------------------------------------------------------------
