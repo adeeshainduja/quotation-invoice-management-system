@@ -72,4 +72,104 @@ class ReportController extends Controller
             'totalCustomersCount' => $totalCustomersCount,
         ]);
     }
+
+    /**
+     * Display the detailed Invoice Report.
+     */
+    public function invoiceReport(Request $request): View
+    {
+        $companies = Company::where('status', 'ACTIVE')
+            ->orderBy('name')
+            ->get(['id', 'name', 'currency']);
+
+        $companyId = $request->filled('company_id')
+            ? $request->integer('company_id')
+            : null;
+
+        $selectedCompany = $companyId ? $companies->firstWhere('id', $companyId) : null;
+        $currency = $selectedCompany->currency ?? ($companies->first()->currency ?? 'LKR');
+
+        $from = $request->query('from') ?: $request->query('from_date');
+        $to = $request->query('to') ?: $request->query('to_date');
+        $customerId = $request->filled('customer_id') ? $request->integer('customer_id') : null;
+        $status = $request->query('status');
+
+        $customers = Customer::when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->orderBy('business_name')
+            ->get(['id', 'business_name', 'customer_name', 'company_id']);
+
+        // Build filtered query using existing Invoice model
+        $query = Invoice::query()
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
+            ->when($from, fn ($q) => $q->whereDate('invoice_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('invoice_date', '<=', $to));
+
+        if ($status) {
+            if ($status === 'OVERDUE') {
+                $query->whereNotIn('status', ['PAID', 'CANCELLED'])
+                    ->where('balance_amount', '>', 0)
+                    ->whereDate('due_date', '<', now()->toDateString());
+            } elseif ($status === 'PARTIAL' || $status === 'PARTIALLY_PAID') {
+                $query->whereIn('status', ['PARTIAL', 'PARTIALLY_PAID']);
+            } elseif ($status === 'PENDING') {
+                $query->whereNotIn('status', ['PAID', 'CANCELLED'])
+                    ->where('balance_amount', '>', 0);
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        // Calculate Summary Cards
+        $totalInvoices = (clone $query)->count();
+        $totalInvoiceAmount = (float) (clone $query)->sum('grand_total');
+        $paidAmount = (float) (clone $query)->sum('amount_paid');
+        $outstandingAmount = (float) (clone $query)->sum('balance_amount');
+
+        $paidInvoices = (clone $query)
+            ->where(function ($q) {
+                $q->where('status', 'PAID')
+                    ->orWhere(function ($sub) {
+                        $sub->where('balance_amount', '<=', 0)
+                            ->where('status', '!=', 'CANCELLED');
+                    });
+            })
+            ->count();
+
+        $pendingInvoices = (clone $query)
+            ->whereNotIn('status', ['PAID', 'CANCELLED'])
+            ->where('balance_amount', '>', 0)
+            ->count();
+
+        $overdueInvoices = (clone $query)
+            ->whereNotIn('status', ['PAID', 'CANCELLED'])
+            ->where('balance_amount', '>', 0)
+            ->whereDate('due_date', '<', now()->toDateString())
+            ->count();
+
+        $invoices = (clone $query)
+            ->with(['customer', 'company'])
+            ->orderByDesc('invoice_date')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('reports.invoices', [
+            'invoices' => $invoices,
+            'companies' => $companies,
+            'customers' => $customers,
+            'companyId' => $companyId,
+            'customerId' => $customerId,
+            'from' => $from,
+            'to' => $to,
+            'status' => $status,
+            'currency' => $currency,
+            'totalInvoices' => $totalInvoices,
+            'totalInvoiceAmount' => $totalInvoiceAmount,
+            'paidAmount' => $paidAmount,
+            'outstandingAmount' => $outstandingAmount,
+            'paidInvoices' => $paidInvoices,
+            'pendingInvoices' => $pendingInvoices,
+            'overdueInvoices' => $overdueInvoices,
+        ]);
+    }
 }

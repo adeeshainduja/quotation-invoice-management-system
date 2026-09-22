@@ -213,6 +213,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:reports.view')
         ->name('reports.index');
 
+    Route::get('/reports/invoices', [ReportController::class, 'invoiceReport'])
+        ->middleware('permission:reports.invoice.view')
+        ->name('reports.invoices');
+
     /*
     |--------------------------------------------------------------------------
     | Activity Logs
