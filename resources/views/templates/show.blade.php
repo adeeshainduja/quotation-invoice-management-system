@@ -40,59 +40,7 @@
 <div class="page">
 
 
-    <header class="topbar">
-
-
-        <div></div>
-
-
-        <div class="topbar-right">
-
-
-            <div class="notification">
-
-                <i data-lucide="bell"></i>
-
-                <span></span>
-
-            </div>
-
-
-            <div class="user">
-
-
-                <div class="avatar">
-
-                    {{
-                        strtoupper(
-                            substr(
-                                auth()->user()->name,
-                                0,
-                                2
-                            )
-                        )
-                    }}
-
-                </div>
-
-
-                <div>
-
-                    <strong>
-                        {{ auth()->user()->name }}
-                    </strong>
-
-                    <small>
-                        Administrator
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </header>
+    @include('partials.topbar')
 
 
 

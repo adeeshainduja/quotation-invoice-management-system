@@ -9,10 +9,22 @@ class TemplateController extends Controller
 {
     public function index(Request $request)
     {
-        $companyList = DB::table('companies')
-            ->where('status', 'ACTIVE')
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
+        if ($request->filled('company_id')) {
+            abort_if(! $user->hasCompanyAccess($request->integer('company_id')), 403, 'Unauthorized company access.');
+        }
+
+        $companyList = $user->isAdmin()
+            ? DB::table('companies')
+                ->where('status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['id', 'name'])
+            : $user->accessibleCompanies()
+                ->where('companies.status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['companies.id', 'companies.name']);
 
         $companyId = $request->integer('company_id')
             ?: optional($companyList->first())->id;
@@ -26,21 +38,18 @@ class TemplateController extends Controller
             )
             ->when(
                 $companyId,
-                fn ($query) =>
-                    $query->where(
-                        'company_templates.company_id',
-                        $companyId
-                    ),
-                fn ($query) =>
-                    $query->whereRaw('1 = 0')
+                fn ($query) => $query->where(
+                    'company_templates.company_id',
+                    $companyId
+                ),
+                fn ($query) => $query->whereRaw('1 = 0')
             )
             ->when(
                 $request->filled('document_type'),
-                fn ($query) =>
-                    $query->where(
-                        'company_templates.document_type',
-                        $request->document_type
-                    )
+                fn ($query) => $query->where(
+                    'company_templates.document_type',
+                    $request->document_type
+                )
             )
             ->select(
                 'company_templates.id',
@@ -68,13 +77,24 @@ class TemplateController extends Controller
         ));
     }
 
-
     public function create(Request $request)
     {
-        $companyList = DB::table('companies')
-            ->where('status', 'ACTIVE')
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
+        if ($request->filled('company_id')) {
+            abort_if(! $user->hasCompanyAccess($request->integer('company_id')), 403, 'Unauthorized company access.');
+        }
+
+        $companyList = $user->isAdmin()
+            ? DB::table('companies')
+                ->where('status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['id', 'name'])
+            : $user->accessibleCompanies()
+                ->where('companies.status', 'ACTIVE')
+                ->orderBy('name')
+                ->get(['companies.id', 'companies.name']);
 
         $companyId = $request->integer('company_id')
             ?: optional($companyList->first())->id;
@@ -95,57 +115,42 @@ class TemplateController extends Controller
         ));
     }
 
-
     public function store(Request $request)
     {
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
         $data = $request->validate([
 
-        'company_id' =>
-            'required|exists:companies,id',
+            'company_id' => 'required|exists:companies,id',
 
-        'document_type' =>
-            'required|in:QUOTATION,INVOICE',
+            'document_type' => 'required|in:QUOTATION,INVOICE',
 
-        'template_name' =>
-            'required|string|max:255',
+            'template_name' => 'required|string|max:255',
 
-        'header_text' =>
-            'nullable|string',
+            'header_text' => 'nullable|string',
 
-        'footer_text' =>
-            'nullable|string',
+            'footer_text' => 'nullable|string',
 
-        'terms_conditions' =>
-            'nullable|string',
+            'terms_conditions' => 'nullable|string',
 
-        'primary_color' =>
-            ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'primary_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
 
-        'secondary_color' =>
-            ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'secondary_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
 
-        'text_color' =>
-            ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'text_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
 
-        'accent_color' =>
-            ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-    ]);
+            'accent_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+        ]);
 
+        abort_if(! $user->hasCompanyAccess($data['company_id']), 403, 'Unauthorized company access.');
 
         $company = DB::table('companies')
             ->where('id', $data['company_id'])
             ->where('status', 'ACTIVE')
             ->first();
 
-        if (!$company) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'company_id' =>
-                        'Selected company is not active.'
-                ]);
-        }
-
+        abort_if(! $company, 403, 'Cannot create transactions for an inactive company.');
 
         $showLogo =
             $request->boolean('show_logo');
@@ -161,7 +166,6 @@ class TemplateController extends Controller
 
         $isDefault =
             $request->boolean('is_default');
-
 
         DB::transaction(function () use (
             $data,
@@ -193,39 +197,28 @@ class TemplateController extends Controller
                     ]);
             }
 
-
             DB::table('company_templates')
                 ->insert([
 
-                    'company_id' =>
-                        $data['company_id'],
+                    'company_id' => $data['company_id'],
 
-                    'document_type' =>
-                        $data['document_type'],
+                    'document_type' => $data['document_type'],
 
-                    'template_name' =>
-                        $data['template_name'],
+                    'template_name' => $data['template_name'],
 
-                    'header_text' =>
-                        $data['header_text'] ?? null,
+                    'header_text' => $data['header_text'] ?? null,
 
-                    'footer_text' =>
-                        $data['footer_text'] ?? null,
+                    'footer_text' => $data['footer_text'] ?? null,
 
-                    'terms_conditions' =>
-                        $data['terms_conditions'] ?? null,
+                    'terms_conditions' => $data['terms_conditions'] ?? null,
 
-                    'show_logo' =>
-                        $showLogo ? 1 : 0,
+                    'show_logo' => $showLogo ? 1 : 0,
 
-                    'show_bank_details' =>
-                        $showBankDetails ? 1 : 0,
+                    'show_bank_details' => $showBankDetails ? 1 : 0,
 
-                    'show_vat' =>
-                        $showVat ? 1 : 0,
+                    'show_vat' => $showVat ? 1 : 0,
 
-                    'show_signature' =>
-                        $showSignature ? 1 : 0,
+                    'show_signature' => $showSignature ? 1 : 0,
 
                     /*
                      * Keep null until we add advanced
@@ -236,92 +229,83 @@ class TemplateController extends Controller
                         JSON_UNESCAPED_UNICODE
                     ),
 
-                    'is_default' =>
-                        $isDefault ? 1 : 0,
+                    'is_default' => $isDefault ? 1 : 0,
 
-                    'created_at' =>
-                        now(),
+                    'created_at' => now(),
 
-                    'updated_at' =>
-                        now(),
+                    'updated_at' => now(),
                 ]);
         });
 
-
         return redirect()
             ->route('templates.index', [
-                'company_id' =>
-                    $data['company_id']
+                'company_id' => $data['company_id'],
             ])
             ->with(
                 'success',
                 'Template created successfully.'
             );
     }
+
     public function show($id)
-{
-    $template = DB::table('company_templates')
-        ->where('id', $id)
-        ->first();
+    {
+        $user = auth()->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
 
-    abort_if(!$template, 404);
+        $template = DB::table('company_templates')
+            ->where('id', $id)
+            ->first();
 
+        abort_if(! $template, 404);
+        abort_if(! $user->hasCompanyAccess($template->company_id), 403, 'Unauthorized company access.');
 
-    $company = DB::table('companies')
-        ->where('id', $template->company_id)
-        ->first();
+        $company = DB::table('companies')
+            ->where('id', $template->company_id)
+            ->first();
 
-    abort_if(!$company, 404);
+        abort_if(! $company, 404);
 
+        $bank = DB::table('company_bank_details')
+            ->where('company_id', $company->id)
+            ->first();
 
-    $bank = DB::table('company_bank_details')
-        ->where('company_id', $company->id)
-        ->first();
+        $config = [];
 
+        if ($template->template_config) {
 
-    $config = [];
+            $decoded = json_decode(
+                $template->template_config,
+                true
+            );
 
-    if ($template->template_config) {
-
-        $decoded = json_decode(
-            $template->template_config,
-            true
-        );
-
-        if (is_array($decoded)) {
-            $config = $decoded;
+            if (is_array($decoded)) {
+                $config = $decoded;
+            }
         }
+
+        $colors = [
+
+            'primary' => $config['primary_color']
+                ?? '#163B65',
+
+            'secondary' => $config['secondary_color']
+                ?? '#EAF2FB',
+
+            'text' => $config['text_color']
+                ?? '#0F172A',
+
+            'accent' => $config['accent_color']
+                ?? '#1474E8',
+        ];
+
+        return view(
+            'templates.show',
+            compact(
+                'template',
+                'company',
+                'bank',
+                'colors'
+            )
+        );
     }
-
-
-    $colors = [
-
-        'primary' =>
-            $config['primary_color']
-            ?? '#163B65',
-
-        'secondary' =>
-            $config['secondary_color']
-            ?? '#EAF2FB',
-
-        'text' =>
-            $config['text_color']
-            ?? '#0F172A',
-
-        'accent' =>
-            $config['accent_color']
-            ?? '#1474E8',
-    ];
-
-
-    return view(
-        'templates.show',
-        compact(
-            'template',
-            'company',
-            'bank',
-            'colors'
-        )
-    );
-}
 }
