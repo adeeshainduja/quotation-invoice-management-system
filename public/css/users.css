@@ -1,5 +1,5 @@
 :root {
-    --sidebar-width: 258px;
+    --sidebar-width: 260px;
     --blue: #1677ff;
     --text: #10264a;
     --muted: #71829a;
@@ -10,9 +10,10 @@
     box-sizing: border-box;
 }
 
-.page {
-    margin-left: var(--sidebar-width) !important;
-    width: calc(100% - var(--sidebar-width)) !important;
+.page,
+.content-wrapper {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
 
     min-height: 100vh;
     min-width: 0;
@@ -615,9 +616,10 @@ td {
     }
 }
 
-@media (max-width: 850px) {
+@media (max-width: 1024px) {
 
-    .page {
+    .page,
+    .content-wrapper {
         margin-left: 0 !important;
         width: 100% !important;
     }

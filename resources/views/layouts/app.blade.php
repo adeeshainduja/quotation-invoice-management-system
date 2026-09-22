@@ -14,10 +14,10 @@
 
 @include('partials.sidebar')
 
-<div class="page">
+<div class="page content-wrapper">
     @include('partials.topbar')
 
-    <main>
+    <main class="container">
         @yield('content')
     </main>
 </div>

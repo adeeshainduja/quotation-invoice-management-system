@@ -7,10 +7,12 @@
     }
 @endphp
 
-<header class="topbar">
-    <button class="menu menu-btn" type="button"><i data-lucide="menu"></i></button>
+<header class="topbar top-header">
+    <div class="topbar-left header-left">
+        <button class="menu menu-btn" type="button"><i data-lucide="menu"></i></button>
+    </div>
 
-    <div class="topbar-right">
+    <div class="topbar-right header-right">
         @if($authUser)
             @if($authUser->isAdmin())
                 <form method="GET" action="{{ url()->current() }}" id="topbarCompanyForm" style="margin: 0;">

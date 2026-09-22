@@ -1,3 +1,362 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* =========================================================
+   GLOBAL RESPONSIVE ARCHITECTURE
+========================================================= */
+
+/* Box sizing & overflow protection */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Sidebar - Fixed Left, Full Height, Scrollable Menu */
+.sidebar {
+    width: 260px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1000;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-menu {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+}
+
+.sidebar-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Main Content Wrapper */
+.content-wrapper,
+.page {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    min-height: 100vh;
+    box-sizing: border-box;
+    transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
+/* Page Container - Max Width & Padding */
+.container {
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* All Cards - Flexible & Responsive */
+.card,
+.summary-card,
+.stat-card,
+.bottom-card,
+.table-card,
+.items-card {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+.card-grid,
+.stats-grid,
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    width: 100%;
+}
+
+/* Tables - Responsive Horizontal Scrolling */
+.table-responsive,
+.table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    min-width: 0;
+    margin-bottom: 1rem;
+}
+
+.table-responsive table,
+.table-wrap table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Buttons - Wrap on Small Screens */
+.form-actions,
+.page-actions,
+.action-buttons,
+.button-group,
+.btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+/* =========================================================
+   RESPONSIVE BREAKPOINTS
+========================================================= */
+
+/* Laptop: 1024px - 1399px */
+@media (min-width: 1024px) and (max-width: 1399px) {
+    .container {
+        padding: 16px;
+    }
+
+    .card,
+    .summary-card,
+    .bottom-card {
+        padding: 14px;
+    }
+
+    th, td {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+}
+
+/* Tablet: 768px - 1024px */
+@media (max-width: 1024px) {
+    .sidebar {
+        transform: translateX(-100%);
+        z-index: 1050;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(7, 26, 66, 0.5);
+        backdrop-filter: blur(2px);
+        z-index: 1040;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .sidebar-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .content-wrapper,
+    .page,
+    .content {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+
+    .menu,
+    .menu-btn {
+        display: inline-flex;
+    }
+
+    /* Form adapts: 2 columns to 1 column */
+    .top-grid,
+    .bottom-grid,
+    .form-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .table-responsive table,
+    .table-wrap table {
+        min-width: 650px;
+    }
+}
+
+/* Mobile: < 768px */
+@media (max-width: 768px) {
+    .container {
+        padding: 12px;
+    }
+
+    .card,
+    .summary-card,
+    .bottom-card {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .card-grid,
+    .stats-grid,
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions > button,
+    .form-actions > a,
+    .page-actions > button,
+    .page-actions > a {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+}
+
+/* =========================================================
+   INVOICE MODULE SPECIFIC RESPONSIVE ARCHITECTURE
+========================================================= */
+
+/* 1. Main Page Container */
+.invoice-container {
+    width: 100%;
+    max-width: 1600px;
+    margin: auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* 2. Top Information Section */
+.invoice-header-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+/* 3. Invoice Items Table */
+.invoice-items-table {
+    width: 100%;
+    min-width: 1100px;
+    border-collapse: collapse;
+}
+
+/* 4. Item Input Fields */
+.item-name {
+    min-width: 250px;
+}
+
+.quantity {
+    min-width: 100px;
+}
+
+.unit {
+    min-width: 120px;
+}
+
+.price {
+    min-width: 140px;
+}
+
+.discount {
+    min-width: 140px;
+}
+
+.vat {
+    min-width: 100px;
+}
+
+.total {
+    min-width: 140px;
+}
+
+.discount-box {
+    min-width: 140px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+/* 5. Notes and Summary */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+@media (min-width: 1400px) {
+    .invoice-container {
+        padding: 24px;
+    }
+}
+
+@media (min-width: 1024px) and (max-width: 1399px) {
+    .invoice-container {
+        padding: 16px;
+    }
+
+    .invoice-header-grid,
+    .summary-grid {
+        gap: 16px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .invoice-container {
+        padding: 16px;
+    }
+
+    .invoice-header-grid,
+    .summary-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .invoice-container {
+        padding: 12px;
+    }
+
+    .invoice-header-grid,
+    .summary-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+    }
+}
+
+/* =========================================================
+   TOP HEADER / NAVIGATION ARCHITECTURE
+========================================================= */
+
+.top-header,
+.topbar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+.topbar-left,
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
+.topbar-right,
+.header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+
