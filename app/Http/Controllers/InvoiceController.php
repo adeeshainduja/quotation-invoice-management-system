@@ -182,6 +182,38 @@ class InvoiceController extends Controller
             abort_if(! $user->hasCompanyAccess($request->integer('company_id')), 403, 'Unauthorized company access.');
         }
 
+        // Load quotation pre-fill data when quotation_id is provided
+        $quotation = null;
+        $prefillItems = null;
+
+        if ($request->filled('quotation_id')) {
+            $quotation = DB::table('quotations')
+                ->where('id', $request->integer('quotation_id'))
+                ->first();
+
+            if ($quotation) {
+                abort_if(! $user->hasCompanyAccess($quotation->company_id), 403, 'Unauthorized company access.');
+
+                $prefillItems = DB::table('quotation_items')
+                    ->where('quotation_id', $quotation->id)
+                    ->orderBy('sort_order')
+                    ->get()
+                    ->map(fn ($item) => [
+                        'item_name' => $item->item_name,
+                        'description' => $item->description ?? '',
+                        'quantity' => $item->quantity,
+                        'unit' => $item->unit ?? '',
+                        'unit_price' => $item->unit_price,
+                        'discount_type' => in_array($item->discount_type, ['NONE', 'PERCENTAGE', 'FIXED'])
+                            ? $item->discount_type
+                            : 'NONE',
+                        'discount_value' => $item->discount_value,
+                        'tax_percentage' => $item->tax_percentage,
+                    ])
+                    ->all();
+            }
+        }
+
         $companyList = $user->isAdmin()
             ? DB::table('companies')
                 ->where('status', 'ACTIVE')
@@ -192,8 +224,10 @@ class InvoiceController extends Controller
                 ->orderBy('name')
                 ->get(['companies.id', 'companies.name']);
 
-        $companyId = $request->integer('company_id')
-            ?: optional($companyList->first())->id;
+        // When coming from a quotation, pin the company to the quotation's company
+        $companyId = $quotation
+            ? $quotation->company_id
+            : ($request->integer('company_id') ?: optional($companyList->first())->id);
 
         $company = null;
         $customers = collect();
@@ -240,7 +274,9 @@ class InvoiceController extends Controller
             'company',
             'customers',
             'templates',
-            'invoiceNumber'
+            'invoiceNumber',
+            'quotation',
+            'prefillItems'
         ));
     }
 
@@ -252,6 +288,8 @@ class InvoiceController extends Controller
             'customer_id' => 'required|exists:customers,id',
 
             'template_id' => 'required|exists:company_templates,id',
+
+            'quotation_id' => 'nullable|integer|exists:quotations,id',
 
             'invoice_date' => 'required|date',
 
@@ -522,7 +560,7 @@ class InvoiceController extends Controller
 
                     'customer_id' => $customer->id,
 
-                    'quotation_id' => null,
+                    'quotation_id' => $data['quotation_id'] ?? null,
 
                     'invoice_number' => $invoiceNumber,
 
@@ -734,10 +772,38 @@ class InvoiceController extends Controller
                 ]
             );
 
+            // If invoice was created from a quotation, mark the quotation as CONVERTED
+            if (! empty($data['quotation_id'])) {
+                $sourceQuotation = DB::table('quotations')
+                    ->where('id', $data['quotation_id'])
+                    ->first();
+
+                if ($sourceQuotation && $sourceQuotation->status !== 'CONVERTED') {
+                    DB::table('quotations')
+                        ->where('id', $data['quotation_id'])
+                        ->update([
+                            'status' => 'CONVERTED',
+                            'converted_invoice_id' => $invoiceId,
+                            'updated_at' => now(),
+                        ]);
+
+                    ActivityLogger::log(
+                        'CONVERT TO INVOICE',
+                        'Quotation',
+                        $data['quotation_id'],
+                        $company->id,
+                        ['status' => $sourceQuotation->status],
+                        [
+                            'status' => 'CONVERTED',
+                            'invoice_id' => $invoiceId,
+                            'invoice_number' => $invoiceNumber,
+                        ]
+                    );
+                }
+            }
+
             return redirect()
-                ->route('invoices.index', [
-                    'company_id' => $company->id,
-                ])
+                ->route('invoices.show', $invoiceId)
                 ->with(
                     'success',
                     'Invoice created successfully.'

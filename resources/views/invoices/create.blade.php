@@ -22,16 +22,33 @@
         ? ($company->tax_percentage ?? $company->vat_percentage ?? 0)
         : 0;
 
-    $oldItems = old('items', [[
-        'item_name' => '',
-        'description' => '',
-        'quantity' => 1,
-        'unit' => '',
-        'unit_price' => 0,
-        'discount_type' => 'NONE',
-        'discount_value' => 0,
-        'tax_percentage' => $defaultTax,
-    ]]);
+    // Determine the items to show: old() → quotation prefill → blank row
+    $oldItems = old('items');
+
+    if (! $oldItems) {
+        if (! empty($prefillItems)) {
+            $oldItems = $prefillItems;
+        } else {
+            $oldItems = [[
+                'item_name'      => '',
+                'description'    => '',
+                'quantity'       => 1,
+                'unit'           => '',
+                'unit_price'     => 0,
+                'discount_type'  => 'NONE',
+                'discount_value' => 0,
+                'tax_percentage' => $defaultTax,
+            ]];
+        }
+    }
+
+    // Quotation pre-fill defaults (used only when no old() value exists)
+    $prefillCustomerId     = $quotation->customer_id ?? null;
+    $prefillReference      = $quotation->quotation_number ?? null;
+    $prefillSubject        = $quotation ? 'Invoice for Quotation ' . $quotation->quotation_number : null;
+    $prefillNotes          = $quotation->notes ?? null;
+    $prefillTerms          = $quotation->terms_conditions ?? null;
+    $prefillAddCharges     = $quotation->additional_charges ?? 0;
 @endphp
 
 <div class="page">
@@ -86,6 +103,18 @@
 
             <input type="hidden" name="company_id" value="{{ $companyId }}">
 
+            @if($quotation)
+                <input type="hidden" name="quotation_id" value="{{ $quotation->id }}">
+
+                <div style="margin-bottom: 16px; padding: 12px 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 7px; color: #1e40af; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="info" style="width: 18px; height: 18px; color: #2563eb; flex-shrink: 0;"></i>
+                    <span>
+                        Pre-filled from Quotation <strong>{{ $quotation->quotation_number }}</strong>.
+                        Review and adjust all fields before creating the invoice.
+                    </span>
+                </div>
+            @endif
+
 
             <div class="top-grid">
 
@@ -119,7 +148,7 @@
                                 data-email="{{ $customer->email }}"
                                 data-address="{{ $customer->address_line_1 }}"
                                 data-city="{{ $customer->city }}"
-                                {{ old('customer_id') == $customer->id ? 'selected' : '' }}
+                                {{ (old('customer_id', $prefillCustomerId)) == $customer->id ? 'selected' : '' }}
                             >
                                 {{ $customer->business_name }}
                             </option>
@@ -260,7 +289,7 @@
                             <input
                                 type="text"
                                 name="reference"
-                                value="{{ old('reference') }}"
+                                value="{{ old('reference', $prefillReference ?? '') }}"
                                 placeholder="PO / Reference"
                             >
                         </div>
@@ -277,7 +306,7 @@
                     <input
                         type="text"
                         name="subject"
-                        value="{{ old('subject') }}"
+                        value="{{ old('subject', $prefillSubject ?? '') }}"
                         placeholder="Invoice subject"
                     >
 
@@ -458,9 +487,9 @@
                                         name="items[{{ $index }}][discount_type]"
                                         class="calc discount-type"
                                     >
-                                        <option value="NONE">None</option>
-                                        <option value="PERCENTAGE">%</option>
-                                        <option value="FIXED">Fixed</option>
+                                        <option value="NONE" {{ ($item['discount_type'] ?? 'NONE') === 'NONE' ? 'selected' : '' }}>None</option>
+                                        <option value="PERCENTAGE" {{ ($item['discount_type'] ?? '') === 'PERCENTAGE' ? 'selected' : '' }}>%</option>
+                                        <option value="FIXED" {{ ($item['discount_type'] ?? '') === 'FIXED' ? 'selected' : '' }}>Fixed</option>
                                     </select>
 
                                     <input
@@ -608,11 +637,11 @@
 
                     <label>Terms & Conditions</label>
 
-                    <textarea name="terms_conditions">{{ old('terms_conditions') }}</textarea>
+                    <textarea name="terms_conditions">{{ old('terms_conditions', $prefillTerms ?? '') }}</textarea>
 
                     <label>Notes</label>
 
-                    <textarea name="notes">{{ old('notes') }}</textarea>
+                    <textarea name="notes">{{ old('notes', $prefillNotes ?? '') }}</textarea>
 
                 </section>
 
@@ -655,7 +684,7 @@
                             type="number"
                             name="additional_charges"
                             id="additionalCharges"
-                            value="{{ old('additional_charges', 0) }}"
+                            value="{{ old('additional_charges', $prefillAddCharges ?? 0) }}"
                             min="0"
                             step="0.01"
                             class="calc summary-input"
