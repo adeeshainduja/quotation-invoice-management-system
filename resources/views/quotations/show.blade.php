@@ -344,9 +344,10 @@
                 </div>
 
 
+                @if((bool) ($company->vat_enabled ?? $company->vat_registered ?? false))
                 <div class="summary-row">
 
-                    <span>Tax</span>
+                    <span>VAT Amount ({{ number_format($quotation->tax_percentage ?? $company->tax_percentage ?? $company->vat_percentage ?? 0, 2) }}%)</span>
 
                     <strong>
                         {{ $company->currency ?? 'LKR' }}
@@ -354,6 +355,7 @@
                     </strong>
 
                 </div>
+                @endif
 
 
                 <div class="summary-row">

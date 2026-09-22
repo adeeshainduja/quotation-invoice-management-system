@@ -516,8 +516,8 @@
                                     name="items[0][tax]"
                                     value="{{ old(
                                         'items.0.tax',
-                                        $company && $company->vat_registered
-                                            ? ($company->vat_percentage ?? 0)
+                                        $company && ($company->vat_enabled ?? $company->vat_registered)
+                                            ? ($company->tax_percentage ?? $company->vat_percentage ?? 0)
                                             : 0
                                     ) }}"
                                     min="0"
@@ -643,10 +643,16 @@
                     </div>
 
 
+                    @php
+                        $isVatEnabled = (bool) ($company && ($company->vat_enabled ?? $company->vat_registered));
+                        $vatPct = $isVatEnabled ? ($company->tax_percentage ?? $company->vat_percentage ?? 0) : 0;
+                    @endphp
+
+                    @if($isVatEnabled)
                     <div class="summary-row">
 
                         <span>
-                            Tax
+                            VAT Amount ({{ $vatPct }}%)
                         </span>
 
                         <strong>
@@ -655,6 +661,9 @@
                         </strong>
 
                     </div>
+                    @else
+                    <span id="taxTotal" style="display: none;">0.00</span>
+                    @endif
 
 
                     <div class="summary-total">

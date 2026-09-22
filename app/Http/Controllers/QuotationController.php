@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class QuotationController extends Controller
 {
@@ -19,7 +19,6 @@ class QuotationController extends Controller
         $companyId = $request->integer('company_id')
             ?: optional($companyList->first())->id;
 
-
         /*
         |--------------------------------------------------------------------------
         | Company Currency
@@ -31,7 +30,6 @@ class QuotationController extends Controller
                 ->where('id', $companyId)
                 ->value('currency') ?? 'LKR'
             : 'LKR';
-
 
         /*
         |--------------------------------------------------------------------------
@@ -49,54 +47,45 @@ class QuotationController extends Controller
             'converted' => 0,
         ];
 
-
         if ($companyId) {
 
             $base = DB::table('quotations')
                 ->where('company_id', $companyId);
 
-
             $stats['total'] =
                 (clone $base)
                     ->count();
-
 
             $stats['draft'] =
                 (clone $base)
                     ->where('status', 'DRAFT')
                     ->count();
 
-
             $stats['sent'] =
                 (clone $base)
                     ->where('status', 'SENT')
                     ->count();
-
 
             $stats['accepted'] =
                 (clone $base)
                     ->where('status', 'ACCEPTED')
                     ->count();
 
-
             $stats['rejected'] =
                 (clone $base)
                     ->where('status', 'REJECTED')
                     ->count();
-
 
             $stats['expired'] =
                 (clone $base)
                     ->where('status', 'EXPIRED')
                     ->count();
 
-
             $stats['converted'] =
                 (clone $base)
                     ->where('status', 'CONVERTED')
                     ->count();
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -111,7 +100,6 @@ class QuotationController extends Controller
                 ->orderBy('business_name')
                 ->get()
             : collect();
-
 
         /*
         |--------------------------------------------------------------------------
@@ -129,41 +117,36 @@ class QuotationController extends Controller
 
             ->when(
                 $companyId,
-                fn ($q) =>
-                    $q->where(
-                        'quotations.company_id',
-                        $companyId
-                    ),
-                fn ($q) =>
-                    $q->whereRaw('1=0')
+                fn ($q) => $q->where(
+                    'quotations.company_id',
+                    $companyId
+                ),
+                fn ($q) => $q->whereRaw('1=0')
             )
 
             ->when(
                 $request->search,
-                fn ($q, $value) =>
-                    $q->where(
-                        'quotation_number',
-                        'like',
-                        "%{$value}%"
-                    )
+                fn ($q, $value) => $q->where(
+                    'quotation_number',
+                    'like',
+                    "%{$value}%"
+                )
             )
 
             ->when(
                 $request->status,
-                fn ($q, $value) =>
-                    $q->where(
-                        'quotations.status',
-                        $value
-                    )
+                fn ($q, $value) => $q->where(
+                    'quotations.status',
+                    $value
+                )
             )
 
             ->when(
                 $request->customer_id,
-                fn ($q, $value) =>
-                    $q->where(
-                        'customer_id',
-                        $value
-                    )
+                fn ($q, $value) => $q->where(
+                    'customer_id',
+                    $value
+                )
             )
 
             ->select(
@@ -177,7 +160,6 @@ class QuotationController extends Controller
 
             ->withQueryString();
 
-
         return view('quotations.index', compact(
             'companyList',
             'companyId',
@@ -187,7 +169,6 @@ class QuotationController extends Controller
             'quotations'
         ));
     }
-
 
     public function create(Request $request)
     {
@@ -204,14 +185,12 @@ class QuotationController extends Controller
         $templates = collect();
         $quotationNumber = '';
 
-
         if ($companyId) {
 
             $company = DB::table('companies')
                 ->where('id', $companyId)
                 ->where('status', 'ACTIVE')
                 ->first();
-
 
             if ($company) {
 
@@ -221,7 +200,6 @@ class QuotationController extends Controller
                     ->orderBy('business_name')
                     ->get();
 
-
                 $templates = DB::table('company_templates')
                     ->where('company_id', $companyId)
                     ->where('document_type', 'QUOTATION')
@@ -229,16 +207,15 @@ class QuotationController extends Controller
                     ->orderBy('template_name')
                     ->get();
 
-
                 $quotationNumber =
                     rtrim(
                         $company->quotation_prefix,
                         '-'
                     )
-                    . '-'
-                    . now()->format('Y')
-                    . '-'
-                    . str_pad(
+                    .'-'
+                    .now()->format('Y')
+                    .'-'
+                    .str_pad(
                         $company->quotation_next_number,
                         4,
                         '0',
@@ -246,7 +223,6 @@ class QuotationController extends Controller
                     );
             }
         }
-
 
         return view('quotations.create', compact(
             'companyList',
@@ -258,58 +234,40 @@ class QuotationController extends Controller
         ));
     }
 
-
     public function store(Request $request)
     {
         $data = $request->validate([
 
-            'company_id' =>
-                'required|exists:companies,id',
+            'company_id' => 'required|exists:companies,id',
 
-            'customer_id' =>
-                'required|exists:customers,id',
+            'customer_id' => 'required|exists:customers,id',
 
-            'template_id' =>
-                'required|exists:company_templates,id',
+            'template_id' => 'required|exists:company_templates,id',
 
-            'quotation_date' =>
-                'required|date',
+            'quotation_date' => 'required|date',
 
-            'expiry_date' =>
-                'nullable|date|after_or_equal:quotation_date',
+            'expiry_date' => 'nullable|date|after_or_equal:quotation_date',
 
-            'reference' =>
-                'nullable|string|max:255',
+            'reference' => 'nullable|string|max:255',
 
-            'notes' =>
-                'nullable|string',
+            'notes' => 'nullable|string',
 
-            'terms_conditions' =>
-                'nullable|string',
+            'terms_conditions' => 'nullable|string',
 
+            'items' => 'required|array|min:1',
 
-            'items' =>
-                'required|array|min:1',
+            'items.*.item_name' => 'required|string|max:255',
 
-            'items.*.item_name' =>
-                'required|string|max:255',
+            'items.*.description' => 'nullable|string',
 
-            'items.*.description' =>
-                'nullable|string',
+            'items.*.quantity' => 'required|numeric|gt:0',
 
-            'items.*.quantity' =>
-                'required|numeric|gt:0',
+            'items.*.unit_price' => 'required|numeric|min:0',
 
-            'items.*.unit_price' =>
-                'required|numeric|min:0',
+            'items.*.discount' => 'nullable|numeric|min:0|max:100',
 
-            'items.*.discount' =>
-                'nullable|numeric|min:0|max:100',
-
-            'items.*.tax' =>
-                'nullable|numeric|min:0|max:100',
+            'items.*.tax' => 'nullable|numeric|min:0|max:100',
         ]);
-
 
         return DB::transaction(function () use ($data) {
 
@@ -331,9 +289,7 @@ class QuotationController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-
-            abort_if(!$company, 404);
-
+            abort_if(! $company, 404);
 
             /*
             |--------------------------------------------------------------------------
@@ -356,15 +312,12 @@ class QuotationController extends Controller
                 )
                 ->first();
 
-
-            if (!$customer) {
+            if (! $customer) {
 
                 throw ValidationException::withMessages([
-                    'customer_id' =>
-                        'Invalid customer.',
+                    'customer_id' => 'Invalid customer.',
                 ]);
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -387,15 +340,12 @@ class QuotationController extends Controller
                 )
                 ->first();
 
-
-            if (!$template) {
+            if (! $template) {
 
                 throw ValidationException::withMessages([
-                    'template_id' =>
-                        'Invalid quotation template.',
+                    'template_id' => 'Invalid quotation template.',
                 ]);
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -408,16 +358,15 @@ class QuotationController extends Controller
                     $company->quotation_prefix,
                     '-'
                 )
-                . '-'
-                . now()->format('Y')
-                . '-'
-                . str_pad(
+                .'-'
+                .now()->format('Y')
+                .'-'
+                .str_pad(
                     $company->quotation_next_number,
                     4,
                     '0',
                     STR_PAD_LEFT
                 );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -425,12 +374,14 @@ class QuotationController extends Controller
             |--------------------------------------------------------------------------
             */
 
+            $isVatEnabled = (bool) ($company->vat_enabled ?? $company->vat_registered ?? false);
+            $companyVatRate = $isVatEnabled ? (float) ($company->tax_percentage ?? $company->vat_percentage ?? 0) : 0;
+
             $subtotal = 0;
             $discountTotal = 0;
             $taxTotal = 0;
 
             $items = [];
-
 
             foreach ($data['items'] as $i => $item) {
 
@@ -445,18 +396,15 @@ class QuotationController extends Controller
                         $item['discount'] ?? 0
                     );
 
-                $tax =
-                    (float) (
-                        $item['tax'] ?? 0
-                    );
-
+                $tax = $isVatEnabled
+                    ? (float) ($item['tax'] ?? $companyVatRate)
+                    : 0;
 
                 $lineSubtotal =
                     round(
                         $qty * $price,
                         2
                     );
-
 
                 $discountAmount =
                     round(
@@ -466,11 +414,9 @@ class QuotationController extends Controller
                         2
                     );
 
-
                 $taxable =
                     $lineSubtotal
                     - $discountAmount;
-
 
                 $taxAmount =
                     round(
@@ -480,14 +426,12 @@ class QuotationController extends Controller
                         2
                     );
 
-
                 $lineTotal =
                     round(
                         $taxable
                         + $taxAmount,
                         2
                     );
-
 
                 $subtotal +=
                     $lineSubtotal;
@@ -498,49 +442,35 @@ class QuotationController extends Controller
                 $taxTotal +=
                     $taxAmount;
 
-
                 $items[] = [
 
-                    'sort_order' =>
-                        $i + 1,
+                    'sort_order' => $i + 1,
 
-                    'item_name' =>
-                        $item['item_name'],
+                    'item_name' => $item['item_name'],
 
-                    'description' =>
-                        $item['description'] ?? null,
+                    'description' => $item['description'] ?? null,
 
-                    'quantity' =>
-                        $qty,
+                    'quantity' => $qty,
 
-                    'unit' =>
-                        null,
+                    'unit' => null,
 
-                    'unit_price' =>
-                        $price,
+                    'unit_price' => $price,
 
-                    'discount_type' =>
-                        $discount > 0
+                    'discount_type' => $discount > 0
                             ? 'PERCENTAGE'
                             : 'NONE',
 
-                    'discount_value' =>
-                        $discount,
+                    'discount_value' => $discount,
 
-                    'discount_amount' =>
-                        $discountAmount,
+                    'discount_amount' => $discountAmount,
 
-                    'tax_percentage' =>
-                        $tax,
+                    'tax_percentage' => $tax,
 
-                    'tax_amount' =>
-                        $taxAmount,
+                    'tax_amount' => $taxAmount,
 
-                    'line_total' =>
-                        $lineTotal,
+                    'line_total' => $lineTotal,
                 ];
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -555,7 +485,6 @@ class QuotationController extends Controller
                 2
             );
 
-
             /*
             |--------------------------------------------------------------------------
             | Insert Quotation
@@ -566,87 +495,62 @@ class QuotationController extends Controller
                 DB::table('quotations')
                     ->insertGetId([
 
-                        'company_id' =>
-                            $company->id,
+                        'company_id' => $company->id,
 
-                        'customer_id' =>
-                            $customer->id,
+                        'customer_id' => $customer->id,
 
-                        'quotation_number' =>
-                            $number,
+                        'quotation_number' => $number,
 
-                        'quotation_date' =>
-                            $data['quotation_date'],
+                        'quotation_date' => $data['quotation_date'],
 
-                        'expiry_date' =>
-                            $data['expiry_date'] ?? null,
+                        'expiry_date' => $data['expiry_date'] ?? null,
 
-                        'reference' =>
-                            $data['reference'] ?? null,
+                        'reference' => $data['reference'] ?? null,
 
-                        'subtotal' =>
-                            $subtotal,
+                        'subtotal' => $subtotal,
 
-                        'discount_type' =>
-                            $discountTotal > 0
+                        'discount_type' => $discountTotal > 0
                                 ? 'FIXED'
                                 : 'NONE',
 
-                        'discount_value' =>
-                            $discountTotal,
+                        'discount_value' => $discountTotal,
 
-                        'discount_amount' =>
-                            $discountTotal,
+                        'discount_amount' => $discountTotal,
 
-                        'tax_percentage' =>
-                            0,
+                        'tax_percentage' => $isVatEnabled ? $companyVatRate : 0,
 
-                        'tax_amount' =>
-                            $taxTotal,
+                        'tax_amount' => $taxTotal,
 
-                        'additional_charges' =>
-                            0,
+                        'additional_charges' => 0,
 
-                        'grand_total' =>
-                            $grandTotal,
+                        'grand_total' => $grandTotal,
 
-                        'status' =>
-                            'DRAFT',
+                        'status' => 'DRAFT',
 
-                        'notes' =>
-                            $data['notes'] ?? null,
+                        'notes' => $data['notes'] ?? null,
 
-                        'terms_conditions' =>
-                            $data['terms_conditions'] ?? null,
+                        'terms_conditions' => $data['terms_conditions'] ?? null,
 
-                        'template_id' =>
-                            $template->id,
+                        'template_id' => $template->id,
 
-                        'company_snapshot' =>
-                            json_encode(
-                                $company
-                            ),
+                        'company_snapshot' => json_encode(
+                            $company
+                        ),
 
-                        'customer_snapshot' =>
-                            json_encode(
-                                $customer
-                            ),
+                        'customer_snapshot' => json_encode(
+                            $customer
+                        ),
 
-                        'template_snapshot' =>
-                            json_encode(
-                                $template
-                            ),
+                        'template_snapshot' => json_encode(
+                            $template
+                        ),
 
-                        'created_by' =>
-                            auth()->id(),
+                        'created_by' => auth()->id(),
 
-                        'created_at' =>
-                            now(),
+                        'created_at' => now(),
 
-                        'updated_at' =>
-                            now(),
+                        'updated_at' => now(),
                     ]);
-
 
             /*
             |--------------------------------------------------------------------------
@@ -659,19 +563,15 @@ class QuotationController extends Controller
                 DB::table('quotation_items')
                     ->insert([
 
-                        'quotation_id' =>
-                            $quotationId,
+                        'quotation_id' => $quotationId,
 
                         ...$item,
 
-                        'created_at' =>
-                            now(),
+                        'created_at' => now(),
 
-                        'updated_at' =>
-                            now(),
+                        'updated_at' => now(),
                     ]);
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -686,10 +586,8 @@ class QuotationController extends Controller
                 )
                 ->update([
 
-                    'quotation_next_number' =>
-                        $company->quotation_next_number + 1,
+                    'quotation_next_number' => $company->quotation_next_number + 1,
                 ]);
-
 
             return redirect()
                 ->route(
@@ -702,7 +600,6 @@ class QuotationController extends Controller
                 );
         });
     }
-
 
     public function show($id)
     {
@@ -723,9 +620,7 @@ class QuotationController extends Controller
             )
             ->first();
 
-
-        abort_if(!$quotation, 404);
-
+        abort_if(! $quotation, 404);
 
         $company = DB::table('companies')
             ->where(
@@ -734,14 +629,12 @@ class QuotationController extends Controller
             )
             ->first();
 
-
         $customer = DB::table('customers')
             ->where(
                 'id',
                 $quotation->customer_id
             )
             ->first();
-
 
         $items = DB::table('quotation_items')
             ->where(
@@ -751,7 +644,6 @@ class QuotationController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-
         $template =
             DB::table('company_templates')
                 ->where(
@@ -759,7 +651,6 @@ class QuotationController extends Controller
                     $quotation->template_id
                 )
                 ->first();
-
 
         return view('quotations.show', compact(
             'quotation',
@@ -770,57 +661,40 @@ class QuotationController extends Controller
         ));
     }
 
-
     public function preview(Request $request)
     {
         $data = $request->validate([
 
-            'company_id' =>
-                'required|exists:companies,id',
+            'company_id' => 'required|exists:companies,id',
 
-            'customer_id' =>
-                'required|exists:customers,id',
+            'customer_id' => 'required|exists:customers,id',
 
-            'template_id' =>
-                'required|exists:company_templates,id',
+            'template_id' => 'required|exists:company_templates,id',
 
-            'quotation_date' =>
-                'required|date',
+            'quotation_date' => 'required|date',
 
-            'expiry_date' =>
-                'nullable|date',
+            'expiry_date' => 'nullable|date',
 
-            'reference' =>
-                'nullable|string',
+            'reference' => 'nullable|string',
 
-            'notes' =>
-                'nullable|string',
+            'notes' => 'nullable|string',
 
-            'terms_conditions' =>
-                'nullable|string',
+            'terms_conditions' => 'nullable|string',
 
-            'items' =>
-                'required|array|min:1',
+            'items' => 'required|array|min:1',
 
-            'items.*.item_name' =>
-                'required|string',
+            'items.*.item_name' => 'required|string',
 
-            'items.*.description' =>
-                'nullable|string',
+            'items.*.description' => 'nullable|string',
 
-            'items.*.quantity' =>
-                'required|numeric',
+            'items.*.quantity' => 'required|numeric',
 
-            'items.*.unit_price' =>
-                'required|numeric',
+            'items.*.unit_price' => 'required|numeric',
 
-            'items.*.discount' =>
-                'nullable|numeric',
+            'items.*.discount' => 'nullable|numeric',
 
-            'items.*.tax' =>
-                'nullable|numeric',
+            'items.*.tax' => 'nullable|numeric',
         ]);
-
 
         /*
         |--------------------------------------------------------------------------
@@ -834,7 +708,6 @@ class QuotationController extends Controller
                 $data['company_id']
             )
             ->first();
-
 
         /*
         |--------------------------------------------------------------------------
@@ -852,7 +725,6 @@ class QuotationController extends Controller
                 $data['company_id']
             )
             ->first();
-
 
         /*
         |--------------------------------------------------------------------------
@@ -875,14 +747,12 @@ class QuotationController extends Controller
             )
             ->first();
 
-
         abort_if(
-            !$company
-            || !$customer
-            || !$template,
+            ! $company
+            || ! $customer
+            || ! $template,
             404
         );
-
 
         /*
         |--------------------------------------------------------------------------
@@ -890,12 +760,14 @@ class QuotationController extends Controller
         |--------------------------------------------------------------------------
         */
 
+        $isVatEnabled = (bool) ($company->vat_enabled ?? $company->vat_registered ?? false);
+        $companyVatRate = $isVatEnabled ? (float) ($company->tax_percentage ?? $company->vat_percentage ?? 0) : 0;
+
         $subtotal = 0;
         $discountTotal = 0;
         $taxTotal = 0;
 
         $items = [];
-
 
         foreach ($data['items'] as $item) {
 
@@ -910,37 +782,30 @@ class QuotationController extends Controller
                     $item['discount'] ?? 0
                 );
 
-            $tax =
-                (float) (
-                    $item['tax'] ?? 0
-                );
-
+            $tax = $isVatEnabled
+                ? (float) ($item['tax'] ?? $companyVatRate)
+                : 0;
 
             $lineSubtotal =
                 $qty * $price;
-
 
             $discountAmount =
                 $lineSubtotal
                 * $discount
                 / 100;
 
-
             $taxable =
                 $lineSubtotal
                 - $discountAmount;
-
 
             $taxAmount =
                 $taxable
                 * $tax
                 / 100;
 
-
             $lineTotal =
                 $taxable
                 + $taxAmount;
-
 
             $subtotal +=
                 $lineSubtotal;
@@ -951,32 +816,23 @@ class QuotationController extends Controller
             $taxTotal +=
                 $taxAmount;
 
-
             $items[] = (object) [
 
-                'item_name' =>
-                    $item['item_name'],
+                'item_name' => $item['item_name'],
 
-                'description' =>
-                    $item['description'] ?? '',
+                'description' => $item['description'] ?? '',
 
-                'quantity' =>
-                    $qty,
+                'quantity' => $qty,
 
-                'unit_price' =>
-                    $price,
+                'unit_price' => $price,
 
-                'discount' =>
-                    $discount,
+                'discount' => $discount,
 
-                'tax' =>
-                    $tax,
+                'tax' => $tax,
 
-                'line_total' =>
-                    $lineTotal,
+                'line_total' => $lineTotal,
             ];
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -986,39 +842,28 @@ class QuotationController extends Controller
 
         $quotation = (object) [
 
-            'quotation_number' =>
-                'PREVIEW',
+            'quotation_number' => 'PREVIEW',
 
-            'quotation_date' =>
-                $data['quotation_date'],
+            'quotation_date' => $data['quotation_date'],
 
-            'expiry_date' =>
-                $data['expiry_date'] ?? null,
+            'expiry_date' => $data['expiry_date'] ?? null,
 
-            'reference' =>
-                $data['reference'] ?? null,
+            'reference' => $data['reference'] ?? null,
 
-            'notes' =>
-                $data['notes'] ?? null,
+            'notes' => $data['notes'] ?? null,
 
-            'terms_conditions' =>
-                $data['terms_conditions'] ?? null,
+            'terms_conditions' => $data['terms_conditions'] ?? null,
 
-            'subtotal' =>
-                $subtotal,
+            'subtotal' => $subtotal,
 
-            'discount_amount' =>
-                $discountTotal,
+            'discount_amount' => $discountTotal,
 
-            'tax_amount' =>
-                $taxTotal,
+            'tax_amount' => $taxTotal,
 
-            'grand_total' =>
-                $subtotal
+            'grand_total' => $subtotal
                 - $discountTotal
                 + $taxTotal,
         ];
-
 
         return view(
             'quotations.preview',
@@ -1032,7 +877,6 @@ class QuotationController extends Controller
         );
     }
 
-
     public function downloadPdf($id)
     {
         $quotation = DB::table('quotations')
@@ -1042,9 +886,7 @@ class QuotationController extends Controller
             )
             ->first();
 
-
-        abort_if(!$quotation, 404);
-
+        abort_if(! $quotation, 404);
 
         $company = DB::table('companies')
             ->where(
@@ -1053,14 +895,12 @@ class QuotationController extends Controller
             )
             ->first();
 
-
         $customer = DB::table('customers')
             ->where(
                 'id',
                 $quotation->customer_id
             )
             ->first();
-
 
         $items = DB::table('quotation_items')
             ->where(
@@ -1070,14 +910,12 @@ class QuotationController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-
         $template = DB::table('company_templates')
             ->where(
                 'id',
                 $quotation->template_id
             )
             ->first();
-
 
         $bank = DB::table('company_bank_details')
             ->where(
@@ -1086,9 +924,11 @@ class QuotationController extends Controller
             )
             ->first();
 
+        $isVatEnabled = (bool) ($company->vat_enabled ?? $company->vat_registered ?? false);
+        $templateView = $isVatEnabled ? 'pdf.quotations.tax-quotation' : 'pdf.quotations.normal';
 
         $pdf = Pdf::loadView(
-            'quotations.pdf',
+            $templateView,
             compact(
                 'quotation',
                 'company',
@@ -1099,10 +939,9 @@ class QuotationController extends Controller
             )
         );
 
-
         return $pdf->download(
             $quotation->quotation_number
-            . '.pdf'
+            .'.pdf'
         );
     }
 }
