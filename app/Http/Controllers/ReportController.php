@@ -172,4 +172,97 @@ class ReportController extends Controller
             'overdueInvoices' => $overdueInvoices,
         ]);
     }
+
+    /**
+     * Display the detailed Payment Report.
+     */
+    public function paymentReport(Request $request): View
+    {
+        $companies = Company::where('status', 'ACTIVE')
+            ->orderBy('name')
+            ->get(['id', 'name', 'currency']);
+
+        $companyId = $request->filled('company_id')
+            ? $request->integer('company_id')
+            : null;
+
+        $selectedCompany = $companyId ? $companies->firstWhere('id', $companyId) : null;
+        $currency = $selectedCompany->currency ?? ($companies->first()->currency ?? 'LKR');
+
+        $from = $request->query('from') ?: $request->query('from_date');
+        $to = $request->query('to') ?: $request->query('to_date');
+        $customerId = $request->filled('customer_id') ? $request->integer('customer_id') : null;
+        $paymentMethod = $request->query('payment_method');
+
+        $customers = Customer::when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->orderBy('business_name')
+            ->get(['id', 'business_name', 'customer_name', 'company_id']);
+
+        // Build filtered query using existing Payment model
+        $query = Payment::query()
+            ->when($companyId, function ($q) use ($companyId) {
+                $q->whereHas('invoice', fn ($iq) => $iq->where('company_id', $companyId));
+            })
+            ->when($customerId, function ($q) use ($customerId) {
+                $q->whereHas('invoice', fn ($iq) => $iq->where('customer_id', $customerId));
+            })
+            ->when($from, fn ($q) => $q->whereDate('payment_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('payment_date', '<=', $to))
+            ->when($paymentMethod, fn ($q) => $q->where('payment_method', $paymentMethod));
+
+        // Calculate Summary Cards
+        $totalPaymentsReceived = (float) (clone $query)->sum('amount');
+        $numberOfPayments = (clone $query)->count();
+
+        $thisMonthPayments = (float) (clone $query)
+            ->whereBetween('payment_date', [
+                now()->startOfMonth()->toDateString(),
+                now()->endOfMonth()->toDateString(),
+            ])
+            ->sum('amount');
+
+        $cashPayments = (float) (clone $query)
+            ->where('payment_method', 'CASH')
+            ->sum('amount');
+
+        $bankPayments = (float) (clone $query)
+            ->where('payment_method', 'BANK_TRANSFER')
+            ->sum('amount');
+
+        $cardPayments = (float) (clone $query)
+            ->where('payment_method', 'CARD')
+            ->sum('amount');
+
+        $outstandingInvoiceAmount = (float) Invoice::query()
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
+            ->whereNotIn('status', ['PAID', 'CANCELLED'])
+            ->where('balance_amount', '>', 0)
+            ->sum('balance_amount');
+
+        $payments = (clone $query)
+            ->with(['invoice.customer', 'invoice.company'])
+            ->orderByDesc('payment_date')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('reports.payments', [
+            'payments' => $payments,
+            'companies' => $companies,
+            'customers' => $customers,
+            'companyId' => $companyId,
+            'customerId' => $customerId,
+            'from' => $from,
+            'to' => $to,
+            'paymentMethod' => $paymentMethod,
+            'currency' => $currency,
+            'totalPaymentsReceived' => $totalPaymentsReceived,
+            'numberOfPayments' => $numberOfPayments,
+            'thisMonthPayments' => $thisMonthPayments,
+            'cashPayments' => $cashPayments,
+            'bankPayments' => $bankPayments,
+            'cardPayments' => $cardPayments,
+            'outstandingInvoiceAmount' => $outstandingInvoiceAmount,
+        ]);
+    }
 }

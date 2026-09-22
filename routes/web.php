@@ -217,6 +217,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:reports.invoice.view')
         ->name('reports.invoices');
 
+    Route::get('/reports/payments', [ReportController::class, 'paymentReport'])
+        ->middleware('permission:reports.payment.view')
+        ->name('reports.payments');
+
     /*
     |--------------------------------------------------------------------------
     | Activity Logs

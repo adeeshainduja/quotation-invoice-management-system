@@ -368,12 +368,16 @@
 
                     <ul class="placeholder-list">
                         <li class="placeholder-item">
-                            <span>Collection History</span>
-                            <span class="placeholder-badge">Placeholder</span>
+                            <a href="{{ route('reports.payments', $companyId ? ['company_id' => $companyId] : []) }}" style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-decoration: none; color: inherit;">
+                                <span style="color: #2563eb; font-weight: 500;">Collection History</span>
+                                <span class="placeholder-badge" style="background: #e0e7ff; color: #1d4ed8;">View Report →</span>
+                            </a>
                         </li>
                         <li class="placeholder-item">
-                            <span>Payment Methods Summary</span>
-                            <span class="placeholder-badge">Placeholder</span>
+                            <a href="{{ route('reports.payments', $companyId ? ['company_id' => $companyId] : []) }}" style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-decoration: none; color: inherit;">
+                                <span style="color: #2563eb; font-weight: 500;">Payment Methods Summary</span>
+                                <span class="placeholder-badge" style="background: #e0e7ff; color: #1d4ed8;">View Report →</span>
+                            </a>
                         </li>
                     </ul>
                 </div>
