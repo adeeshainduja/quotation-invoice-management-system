@@ -23,9 +23,13 @@ class Company extends Model
         'logo_path',
         'signature_path',
         'stamp_path',
+        'tin_number',
+        'vat_enabled',
         'vat_registered',
         'vat_number',
         'vat_percentage',
+        'tax_registration_number',
+        'tax_percentage',
         'bank_name',
         'bank_account_name',
         'bank_account_number',
@@ -40,11 +44,64 @@ class Company extends Model
     ];
 
     protected $casts = [
+        'vat_enabled' => 'boolean',
         'vat_registered' => 'boolean',
         'vat_percentage' => 'decimal:2',
+        'tax_percentage' => 'decimal:2',
         'quotation_next_number' => 'integer',
         'invoice_next_number' => 'integer',
     ];
+
+    public function isVatEnabled(): bool
+    {
+        return (bool) ($this->vat_enabled ?? $this->vat_registered ?? false);
+    }
+
+    public function getVatEnabledAttribute($value): bool
+    {
+        return (bool) ($value ?? $this->attributes['vat_registered'] ?? false);
+    }
+
+    public function setVatEnabledAttribute($value): void
+    {
+        $bool = (bool) $value;
+        $this->attributes['vat_enabled'] = $bool;
+        $this->attributes['vat_registered'] = $bool;
+    }
+
+    public function setVatRegisteredAttribute($value): void
+    {
+        $bool = (bool) $value;
+        $this->attributes['vat_registered'] = $bool;
+        $this->attributes['vat_enabled'] = $bool;
+    }
+
+    public function getTaxPercentageAttribute($value): ?float
+    {
+        if ($value !== null) {
+            return (float) $value;
+        }
+
+        return isset($this->attributes['vat_percentage']) && $this->attributes['vat_percentage'] !== null
+            ? (float) $this->attributes['vat_percentage']
+            : null;
+    }
+
+    public function setTaxPercentageAttribute($value): void
+    {
+        $this->attributes['tax_percentage'] = $value;
+        if (! isset($this->attributes['vat_percentage']) || $this->attributes['vat_percentage'] === null) {
+            $this->attributes['vat_percentage'] = $value;
+        }
+    }
+
+    public function setVatPercentageAttribute($value): void
+    {
+        $this->attributes['vat_percentage'] = $value;
+        if (! isset($this->attributes['tax_percentage']) || $this->attributes['tax_percentage'] === null) {
+            $this->attributes['tax_percentage'] = $value;
+        }
+    }
 
     public function customers(): HasMany
     {

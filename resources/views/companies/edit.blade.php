@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Add Company</title>
+    <title>Edit Company - {{ $company->name }}</title>
 
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ asset('css/customer-create.css') }}">
@@ -35,7 +35,7 @@
 
             <span>›</span>
 
-            Add Company
+            Edit Company
 
         </div>
 
@@ -43,10 +43,10 @@
         <div class="create-heading">
 
             <div>
-                <h1>Add New Company</h1>
+                <h1>Edit Company</h1>
 
                 <p>
-                    Enter the business information used for quotations and invoices.
+                    Update company information, branding, tax settings, and document prefixes.
                 </p>
             </div>
 
@@ -72,11 +72,12 @@
 
         <form
             method="POST"
-            action="{{ route('companies.store') }}"
+            action="{{ route('companies.update', $company->id) }}"
             enctype="multipart/form-data"
         >
 
             @csrf
+            @method('PUT')
 
 
             <div class="form-grid">
@@ -97,7 +98,7 @@
                     <input
                         type="text"
                         name="name"
-                        value="{{ old('name') }}"
+                        value="{{ old('name', $company->name) }}"
                         placeholder="Enter company name"
                         required
                     >
@@ -110,19 +111,9 @@
                     <input
                         type="text"
                         name="registration_number"
-                        value="{{ old('registration_number') }}"
+                        value="{{ old('registration_number', $company->registration_number) }}"
                         placeholder="Enter registration number"
                         required
-                    >
-
-
-                    <label>TIN</label>
-
-                    <input
-                        type="text"
-                        name="tin"
-                        value="{{ old('tin') }}"
-                        placeholder="Enter TIN"
                     >
 
 
@@ -131,7 +122,7 @@
                     <input
                         type="url"
                         name="website"
-                        value="{{ old('website') }}"
+                        value="{{ old('website', $company->website) }}"
                         placeholder="https://example.com"
                     >
 
@@ -154,7 +145,7 @@
                     <input
                         type="email"
                         name="email"
-                        value="{{ old('email') }}"
+                        value="{{ old('email', $company->email) }}"
                         placeholder="Enter email address"
                         required
                     >
@@ -167,7 +158,7 @@
                     <input
                         type="text"
                         name="phone"
-                        value="{{ old('phone') }}"
+                        value="{{ old('phone', $company->phone) }}"
                         placeholder="Enter phone number"
                         required
                     >
@@ -175,27 +166,45 @@
 
                     <label>Logo</label>
 
+                    @if(!empty($company->logo_path))
+                        <div style="margin-bottom: 8px;">
+                            <small style="color: #64748b;">Current Logo: {{ basename($company->logo_path) }}</small>
+                        </div>
+                    @endif
+
                     <input
                         type="file"
-                        name="logo"
+                        name="logo_path"
                         accept="image/*"
                     >
 
 
                     <label>Signature</label>
 
+                    @if(!empty($company->signature_path))
+                        <div style="margin-bottom: 8px;">
+                            <small style="color: #64748b;">Current Signature: {{ basename($company->signature_path) }}</small>
+                        </div>
+                    @endif
+
                     <input
                         type="file"
-                        name="signature"
+                        name="signature_path"
                         accept="image/*"
                     >
 
 
                     <label>Stamp</label>
 
+                    @if(!empty($company->stamp_path))
+                        <div style="margin-bottom: 8px;">
+                            <small style="color: #64748b;">Current Stamp: {{ basename($company->stamp_path) }}</small>
+                        </div>
+                    @endif
+
                     <input
                         type="file"
-                        name="stamp"
+                        name="stamp_path"
                         accept="image/*"
                     >
 
@@ -218,7 +227,7 @@
                     <input
                         type="text"
                         name="address_line_1"
-                        value="{{ old('address_line_1') }}"
+                        value="{{ old('address_line_1', $company->address_line_1) }}"
                         placeholder="Enter address line 1"
                         required
                     >
@@ -229,7 +238,7 @@
                     <input
                         type="text"
                         name="address_line_2"
-                        value="{{ old('address_line_2') }}"
+                        value="{{ old('address_line_2', $company->address_line_2) }}"
                         placeholder="Enter address line 2"
                     >
 
@@ -241,7 +250,7 @@
                     <input
                         type="text"
                         name="city"
-                        value="{{ old('city') }}"
+                        value="{{ old('city', $company->city) }}"
                         placeholder="Enter city"
                         required
                     >
@@ -254,7 +263,7 @@
                     <input
                         type="text"
                         name="country"
-                        value="{{ old('country', 'Sri Lanka') }}"
+                        value="{{ old('country', $company->country ?? 'Sri Lanka') }}"
                         required
                     >
 
@@ -273,9 +282,13 @@
                         VAT Registered?
                     </label>
 
+                    @php
+                        $isVat = (bool) old('vat_enabled', old('vat_registered', $company->vat_enabled ?? $company->vat_registered ?? false));
+                    @endphp
+
                     <select name="vat_enabled" id="vat_enabled">
-                        <option value="0" {{ old('vat_enabled', old('vat_registered', '0')) == '0' ? 'selected' : '' }}>No</option>
-                        <option value="1" {{ old('vat_enabled', old('vat_registered')) == '1' ? 'selected' : '' }}>Yes</option>
+                        <option value="0" {{ !$isVat ? 'selected' : '' }}>No</option>
+                        <option value="1" {{ $isVat ? 'selected' : '' }}>Yes</option>
                     </select>
 
                     <label>VAT Number</label>
@@ -283,7 +296,7 @@
                     <input
                         type="text"
                         name="vat_number"
-                        value="{{ old('vat_number') }}"
+                        value="{{ old('vat_number', $company->vat_number) }}"
                         placeholder="Enter VAT number"
                     >
 
@@ -292,7 +305,7 @@
                     <input
                         type="text"
                         name="tin_number"
-                        value="{{ old('tin_number', old('tin')) }}"
+                        value="{{ old('tin_number', $company->tin_number ?? $company->tin ?? '') }}"
                         placeholder="Enter TIN number"
                     >
 
@@ -301,7 +314,7 @@
                     <input
                         type="text"
                         name="tax_registration_number"
-                        value="{{ old('tax_registration_number') }}"
+                        value="{{ old('tax_registration_number', $company->tax_registration_number ?? '') }}"
                         placeholder="Enter Tax Registration number"
                     >
 
@@ -310,7 +323,7 @@
                     <input
                         type="number"
                         name="tax_percentage"
-                        value="{{ old('tax_percentage', old('vat_percentage')) }}"
+                        value="{{ old('tax_percentage', old('vat_percentage', $company->tax_percentage ?? $company->vat_percentage ?? '')) }}"
                         min="0"
                         max="100"
                         step="0.01"
@@ -328,7 +341,6 @@
                         Numbering & Settings
                     </h2>
 
-
                     <label>
                         Quotation Prefix <span>*</span>
                     </label>
@@ -336,7 +348,7 @@
                     <input
                         type="text"
                         name="quotation_prefix"
-                        value="{{ old('quotation_prefix', 'QUO') }}"
+                        value="{{ old('quotation_prefix', $company->quotation_prefix) }}"
                         required
                     >
 
@@ -346,7 +358,7 @@
                     <input
                         type="number"
                         name="quotation_next_number"
-                        value="{{ old('quotation_next_number', 1) }}"
+                        value="{{ old('quotation_next_number', $company->quotation_next_number) }}"
                         min="1"
                     >
 
@@ -358,7 +370,7 @@
                     <input
                         type="text"
                         name="invoice_prefix"
-                        value="{{ old('invoice_prefix', 'INV') }}"
+                        value="{{ old('invoice_prefix', $company->invoice_prefix) }}"
                         required
                     >
 
@@ -368,7 +380,7 @@
                     <input
                         type="number"
                         name="invoice_next_number"
-                        value="{{ old('invoice_next_number', 1) }}"
+                        value="{{ old('invoice_next_number', $company->invoice_next_number) }}"
                         min="1"
                     >
 
@@ -384,21 +396,21 @@
 
                         <option
                             value="LKR"
-                            {{ old('currency', 'LKR') === 'LKR' ? 'selected' : '' }}
+                            {{ old('currency', $company->currency) === 'LKR' ? 'selected' : '' }}
                         >
                             LKR - Sri Lankan Rupee
                         </option>
 
                         <option
                             value="AUD"
-                            {{ old('currency') === 'AUD' ? 'selected' : '' }}
+                            {{ old('currency', $company->currency) === 'AUD' ? 'selected' : '' }}
                         >
                             AUD - Australian Dollar
                         </option>
 
                         <option
                             value="USD"
-                            {{ old('currency') === 'USD' ? 'selected' : '' }}
+                            {{ old('currency', $company->currency) === 'USD' ? 'selected' : '' }}
                         >
                             USD - US Dollar
                         </option>
@@ -412,14 +424,14 @@
 
                         <option
                             value="ACTIVE"
-                            {{ old('status', 'ACTIVE') === 'ACTIVE' ? 'selected' : '' }}
+                            {{ old('status', $company->status) === 'ACTIVE' ? 'selected' : '' }}
                         >
                             Active
                         </option>
 
                         <option
                             value="INACTIVE"
-                            {{ old('status') === 'INACTIVE' ? 'selected' : '' }}
+                            {{ old('status', $company->status) === 'INACTIVE' ? 'selected' : '' }}
                         >
                             Inactive
                         </option>
@@ -446,7 +458,7 @@
 
                     <i data-lucide="save"></i>
 
-                    Save Company
+                    Update Company
 
                 </button>
 
