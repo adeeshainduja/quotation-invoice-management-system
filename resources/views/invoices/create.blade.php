@@ -16,9 +16,10 @@
 
 @php
     $currency = $company->currency ?? 'LKR';
+    $isVatEnabled = (bool) ($company && ($company->vat_enabled ?? $company->vat_registered));
 
-    $defaultTax = $company && $company->vat_registered
-        ? ($company->vat_percentage ?? 0)
+    $defaultTax = $isVatEnabled
+        ? ($company->tax_percentage ?? $company->vat_percentage ?? 0)
         : 0;
 
     $oldItems = old('items', [[
@@ -627,10 +628,14 @@
                         <strong>{{ $currency }} <span id="discountTotal">0.00</span></strong>
                     </div>
 
+                    @if($isVatEnabled)
                     <div class="summary-row">
-                        <span>Tax</span>
+                        <span>VAT Amount ({{ $defaultTax }}%)</span>
                         <strong>{{ $currency }} <span id="taxTotal">0.00</span></strong>
                     </div>
+                    @else
+                    <span id="taxTotal" style="display: none;">0.00</span>
+                    @endif
 
                     <div class="summary-row">
                         <span>Additional Charges</span>

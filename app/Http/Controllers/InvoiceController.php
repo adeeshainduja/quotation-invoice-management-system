@@ -119,31 +119,27 @@ class InvoiceController extends Controller
             })
             ->when(
                 $request->status,
-                fn ($q, $status) =>
-                    $q->where('invoices.status', $status)
+                fn ($q, $status) => $q->where('invoices.status', $status)
             )
             ->when(
                 $request->customer_id,
-                fn ($q, $id) =>
-                    $q->where('invoices.customer_id', $id)
+                fn ($q, $id) => $q->where('invoices.customer_id', $id)
             )
             ->when(
                 $request->from_date,
-                fn ($q, $date) =>
-                    $q->whereDate(
-                        'invoices.invoice_date',
-                        '>=',
-                        $date
-                    )
+                fn ($q, $date) => $q->whereDate(
+                    'invoices.invoice_date',
+                    '>=',
+                    $date
+                )
             )
             ->when(
                 $request->to_date,
-                fn ($q, $date) =>
-                    $q->whereDate(
-                        'invoices.invoice_date',
-                        '<=',
-                        $date
-                    )
+                fn ($q, $date) => $q->whereDate(
+                    'invoices.invoice_date',
+                    '<=',
+                    $date
+                )
             )
             ->select(
                 'invoices.*',
@@ -163,7 +159,6 @@ class InvoiceController extends Controller
             'invoices'
         ));
     }
-
 
     public function create(Request $request)
     {
@@ -202,10 +197,10 @@ class InvoiceController extends Controller
 
                 $invoiceNumber =
                     rtrim($company->invoice_prefix, '-')
-                    . '-'
-                    . now()->format('Y')
-                    . '-'
-                    . str_pad(
+                    .'-'
+                    .now()->format('Y')
+                    .'-'
+                    .str_pad(
                         $company->invoice_next_number,
                         4,
                         '0',
@@ -224,95 +219,65 @@ class InvoiceController extends Controller
         ));
     }
 
-
     public function store(Request $request)
     {
         $data = $request->validate([
-            'company_id' =>
-                'required|exists:companies,id',
+            'company_id' => 'required|exists:companies,id',
 
-            'customer_id' =>
-                'required|exists:customers,id',
+            'customer_id' => 'required|exists:customers,id',
 
-            'template_id' =>
-                'required|exists:company_templates,id',
+            'template_id' => 'required|exists:company_templates,id',
 
-            'invoice_date' =>
-                'required|date',
+            'invoice_date' => 'required|date',
 
-            'due_date' =>
-                'nullable|date|after_or_equal:invoice_date',
+            'due_date' => 'nullable|date|after_or_equal:invoice_date',
 
-            'subject' =>
-                'nullable|string|max:255',
+            'subject' => 'nullable|string|max:255',
 
-            'reference' =>
-                'nullable|string|max:255',
+            'reference' => 'nullable|string|max:255',
 
-            'additional_charges' =>
-                'nullable|numeric|min:0',
+            'additional_charges' => 'nullable|numeric|min:0',
 
-            'notes' =>
-                'nullable|string',
+            'notes' => 'nullable|string',
 
-            'terms_conditions' =>
-                'nullable|string',
+            'terms_conditions' => 'nullable|string',
 
-            'payment_method' =>
-                'required|in:CASH,BANK_TRANSFER,CARD,CHEQUE,OTHER',
+            'payment_method' => 'required|in:CASH,BANK_TRANSFER,CARD,CHEQUE,OTHER',
 
-            'payment_date' =>
-                'required|date',
+            'payment_date' => 'required|date',
 
-            'payment_amount' =>
-                'required|numeric|gt:0',
+            'payment_amount' => 'required|numeric|gt:0',
 
-            'payment_reference' =>
-                'nullable|string|max:255',
+            'payment_reference' => 'nullable|string|max:255',
 
-            'payment_notes' =>
-                'nullable|string',
+            'payment_notes' => 'nullable|string',
 
-            'schedule_enabled' =>
-                'nullable|boolean',
+            'schedule_enabled' => 'nullable|boolean',
 
-            'schedule_frequency' =>
-                'nullable|required_if:schedule_enabled,1|in:WEEKLY,MONTHLY,QUARTERLY,YEARLY',
+            'schedule_frequency' => 'nullable|required_if:schedule_enabled,1|in:WEEKLY,MONTHLY,QUARTERLY,YEARLY',
 
-            'schedule_start_date' =>
-                'nullable|required_if:schedule_enabled,1|date|after:invoice_date',
+            'schedule_start_date' => 'nullable|required_if:schedule_enabled,1|date|after:invoice_date',
 
-            'schedule_end_date' =>
-                'nullable|date|after_or_equal:schedule_start_date',
+            'schedule_end_date' => 'nullable|date|after_or_equal:schedule_start_date',
 
-            'items' =>
-                'required|array|min:1',
+            'items' => 'required|array|min:1',
 
-            'items.*.item_name' =>
-                'required|string|max:255',
+            'items.*.item_name' => 'required|string|max:255',
 
-            'items.*.description' =>
-                'nullable|string',
+            'items.*.description' => 'nullable|string',
 
-            'items.*.quantity' =>
-                'required|numeric|gt:0',
+            'items.*.quantity' => 'required|numeric|gt:0',
 
-            'items.*.unit' =>
-                'nullable|string|max:50',
+            'items.*.unit' => 'nullable|string|max:50',
 
-            'items.*.unit_price' =>
-                'required|numeric|min:0',
+            'items.*.unit_price' => 'required|numeric|min:0',
 
-            'items.*.discount_type' =>
-                'required|in:NONE,PERCENTAGE,FIXED',
+            'items.*.discount_type' => 'required|in:NONE,PERCENTAGE,FIXED',
 
-            'items.*.discount_value' =>
-                'required|numeric|min:0',
+            'items.*.discount_value' => 'required|numeric|min:0',
 
-            'items.*.tax_percentage' =>
-                'required|numeric|min:0|max:100',
+            'items.*.tax_percentage' => 'required|numeric|min:0|max:100',
         ]);
-
 
         return DB::transaction(function () use ($data) {
 
@@ -322,13 +287,11 @@ class InvoiceController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if (!$company) {
+            if (! $company) {
                 throw ValidationException::withMessages([
-                    'company_id' =>
-                        'Selected company is not available.',
+                    'company_id' => 'Selected company is not available.',
                 ]);
             }
-
 
             $customer = DB::table('customers')
                 ->where('id', $data['customer_id'])
@@ -336,13 +299,11 @@ class InvoiceController extends Controller
                 ->where('status', 'ACTIVE')
                 ->first();
 
-            if (!$customer) {
+            if (! $customer) {
                 throw ValidationException::withMessages([
-                    'customer_id' =>
-                        'Selected customer does not belong to this company.',
+                    'customer_id' => 'Selected customer does not belong to this company.',
                 ]);
             }
-
 
             $template = DB::table('company_templates')
                 ->where('id', $data['template_id'])
@@ -350,32 +311,31 @@ class InvoiceController extends Controller
                 ->where('document_type', 'INVOICE')
                 ->first();
 
-            if (!$template) {
+            if (! $template) {
                 throw ValidationException::withMessages([
-                    'template_id' =>
-                        'Selected invoice template is invalid.',
+                    'template_id' => 'Selected invoice template is invalid.',
                 ]);
             }
 
-
             $invoiceNumber =
                 rtrim($company->invoice_prefix, '-')
-                . '-'
-                . now()->format('Y')
-                . '-'
-                . str_pad(
+                .'-'
+                .now()->format('Y')
+                .'-'
+                .str_pad(
                     $company->invoice_next_number,
                     4,
                     '0',
                     STR_PAD_LEFT
                 );
 
-
             $subtotal = 0;
             $discountTotal = 0;
             $taxTotal = 0;
             $items = [];
 
+            $isVatEnabled = (bool) ($company->vat_enabled ?? $company->vat_registered ?? false);
+            $companyVatRate = $isVatEnabled ? (float) ($company->tax_percentage ?? $company->vat_percentage ?? 0) : 0;
 
             foreach ($data['items'] as $index => $item) {
 
@@ -407,8 +367,7 @@ class InvoiceController extends Controller
 
                     if ($discountValue > 10000) {
                         throw ValidationException::withMessages([
-                            "items.$index.discount_value" =>
-                                'Percentage discount cannot exceed 100%.',
+                            "items.$index.discount_value" => 'Percentage discount cannot exceed 100%.',
                         ]);
                     }
 
@@ -423,8 +382,7 @@ class InvoiceController extends Controller
 
                     if ($discountAmount > $lineSubtotal) {
                         throw ValidationException::withMessages([
-                            "items.$index.discount_value" =>
-                                'Fixed discount cannot exceed subtotal.',
+                            "items.$index.discount_value" => 'Fixed discount cannot exceed subtotal.',
                         ]);
                     }
                 }
@@ -432,15 +390,18 @@ class InvoiceController extends Controller
                 $taxable =
                     $lineSubtotal - $discountAmount;
 
-                $taxPercentage =
-                    $this->decimalToInteger(
-                        $item['tax_percentage']
-                    );
+                $taxPercentage = $isVatEnabled
+                    ? $this->decimalToInteger(
+                        $item['tax_percentage'] ?? $companyVatRate
+                    )
+                    : 0;
 
-                $taxAmount = (int) round(
-                    ($taxable * $taxPercentage)
-                    / 10000
-                );
+                $taxAmount = $isVatEnabled
+                    ? (int) round(
+                        ($taxable * $taxPercentage)
+                        / 10000
+                    )
+                    : 0;
 
                 $lineTotal =
                     $taxable + $taxAmount;
@@ -452,55 +413,43 @@ class InvoiceController extends Controller
                 $items[] = [
                     'sort_order' => $index + 1,
 
-                    'item_name' =>
-                        $item['item_name'],
+                    'item_name' => $item['item_name'],
 
-                    'description' =>
-                        $item['description'] ?? null,
+                    'description' => $item['description'] ?? null,
 
-                    'quantity' =>
-                        $this->integerToDecimal(
-                            $quantity
-                        ),
+                    'quantity' => $this->integerToDecimal(
+                        $quantity
+                    ),
 
-                    'unit' =>
-                        $item['unit'] ?? null,
+                    'unit' => $item['unit'] ?? null,
 
-                    'unit_price' =>
-                        $this->integerToDecimal(
-                            $unitPrice
-                        ),
+                    'unit_price' => $this->integerToDecimal(
+                        $unitPrice
+                    ),
 
-                    'discount_type' =>
-                        $discountType,
+                    'discount_type' => $discountType,
 
-                    'discount_value' =>
-                        $this->integerToDecimal(
-                            $discountValue
-                        ),
+                    'discount_value' => $this->integerToDecimal(
+                        $discountValue
+                    ),
 
-                    'discount_amount' =>
-                        $this->integerToDecimal(
-                            $discountAmount
-                        ),
+                    'discount_amount' => $this->integerToDecimal(
+                        $discountAmount
+                    ),
 
-                    'tax_percentage' =>
-                        $this->integerToDecimal(
-                            $taxPercentage
-                        ),
+                    'tax_percentage' => $this->integerToDecimal(
+                        $taxPercentage
+                    ),
 
-                    'tax_amount' =>
-                        $this->integerToDecimal(
-                            $taxAmount
-                        ),
+                    'tax_amount' => $this->integerToDecimal(
+                        $taxAmount
+                    ),
 
-                    'line_total' =>
-                        $this->integerToDecimal(
-                            $lineTotal
-                        ),
+                    'line_total' => $this->integerToDecimal(
+                        $lineTotal
+                    ),
                 ];
             }
-
 
             $additionalCharges =
                 $this->decimalToInteger(
@@ -513,208 +462,160 @@ class InvoiceController extends Controller
                 + $taxTotal
                 + $additionalCharges;
 
-
             $paymentAmount =
                 $this->decimalToInteger(
                     $data['payment_amount']
                 );
 
-
             if ($paymentAmount > $grandTotal) {
                 throw ValidationException::withMessages([
-                    'payment_amount' =>
-                        'Payment amount cannot exceed invoice total.',
+                    'payment_amount' => 'Payment amount cannot exceed invoice total.',
                 ]);
             }
 
-
             $balanceAmount =
                 $grandTotal - $paymentAmount;
-
 
             $status =
                 $balanceAmount <= 0
                     ? 'PAID'
                     : 'PARTIALLY_PAID';
 
-
             $invoiceId = DB::table('invoices')
                 ->insertGetId([
 
-                    'company_id' =>
-                        $company->id,
+                    'company_id' => $company->id,
 
-                    'customer_id' =>
-                        $customer->id,
+                    'customer_id' => $customer->id,
 
-                    'quotation_id' =>
-                        null,
+                    'quotation_id' => null,
 
-                    'invoice_number' =>
-                        $invoiceNumber,
+                    'invoice_number' => $invoiceNumber,
 
-                    'invoice_date' =>
-                        $data['invoice_date'],
+                    'invoice_date' => $data['invoice_date'],
 
-                    'due_date' =>
-                        $data['due_date'] ?? null,
+                    'due_date' => $data['due_date'] ?? null,
 
-                    'subject' =>
-                        $data['subject'] ?? null,
+                    'subject' => $data['subject'] ?? null,
 
-                    'reference' =>
-                        $data['reference'] ?? null,
+                    'reference' => $data['reference'] ?? null,
 
-                    'subtotal' =>
-                        $this->integerToDecimal(
-                            $subtotal
-                        ),
+                    'subtotal' => $this->integerToDecimal(
+                        $subtotal
+                    ),
 
-                    'discount_type' =>
-                        $discountTotal > 0
+                    'discount_type' => $discountTotal > 0
                             ? 'FIXED'
                             : 'NONE',
 
-                    'discount_value' =>
-                        $this->integerToDecimal(
-                            $discountTotal
-                        ),
+                    'discount_value' => $this->integerToDecimal(
+                        $discountTotal
+                    ),
 
-                    'discount_amount' =>
-                        $this->integerToDecimal(
-                            $discountTotal
-                        ),
+                    'discount_amount' => $this->integerToDecimal(
+                        $discountTotal
+                    ),
 
-                    'tax_percentage' =>
-                        '0.00',
+                    'tax_percentage' => $this->integerToDecimal(
+                        $isVatEnabled ? $this->decimalToInteger($companyVatRate) : 0
+                    ),
 
-                    'tax_amount' =>
-                        $this->integerToDecimal(
-                            $taxTotal
-                        ),
+                    'tax_amount' => $this->integerToDecimal(
+                        $taxTotal
+                    ),
 
-                    'additional_charges' =>
-                        $this->integerToDecimal(
-                            $additionalCharges
-                        ),
+                    'additional_charges' => $this->integerToDecimal(
+                        $additionalCharges
+                    ),
 
-                    'grand_total' =>
-                        $this->integerToDecimal(
-                            $grandTotal
-                        ),
+                    'grand_total' => $this->integerToDecimal(
+                        $grandTotal
+                    ),
 
-                    'amount_paid' =>
-                        $this->integerToDecimal(
-                            $paymentAmount
-                        ),
+                    'amount_paid' => $this->integerToDecimal(
+                        $paymentAmount
+                    ),
 
-                    'balance_amount' =>
-                        $this->integerToDecimal(
-                            $balanceAmount
-                        ),
+                    'balance_amount' => $this->integerToDecimal(
+                        $balanceAmount
+                    ),
 
-                    'status' =>
-                        $status,
+                    'status' => $status,
 
-                    'notes' =>
-                        $data['notes'] ?? null,
+                    'notes' => $data['notes'] ?? null,
 
-                    'terms_conditions' =>
-                        $data['terms_conditions'] ?? null,
+                    'terms_conditions' => $data['terms_conditions'] ?? null,
 
-                    'template_id' =>
-                        $template->id,
+                    'template_id' => $template->id,
 
-                    'company_snapshot' =>
-                        json_encode(
-                            $company,
-                            JSON_UNESCAPED_UNICODE
-                        ),
+                    'company_snapshot' => json_encode(
+                        $company,
+                        JSON_UNESCAPED_UNICODE
+                    ),
 
-                    'customer_snapshot' =>
-                        json_encode(
-                            $customer,
-                            JSON_UNESCAPED_UNICODE
-                        ),
+                    'customer_snapshot' => json_encode(
+                        $customer,
+                        JSON_UNESCAPED_UNICODE
+                    ),
 
-                    'template_snapshot' =>
-                        json_encode(
-                            $template,
-                            JSON_UNESCAPED_UNICODE
-                        ),
+                    'template_snapshot' => json_encode(
+                        $template,
+                        JSON_UNESCAPED_UNICODE
+                    ),
 
-                    'created_by' =>
-                        auth()->id(),
+                    'created_by' => auth()->id(),
 
-                    'created_at' =>
-                        now(),
+                    'created_at' => now(),
 
-                    'updated_at' =>
-                        now(),
+                    'updated_at' => now(),
                 ]);
-
 
             foreach ($items as $item) {
 
                 DB::table('invoice_items')
                     ->insert([
-                        'invoice_id' =>
-                            $invoiceId,
+                        'invoice_id' => $invoiceId,
 
-                        'source_quotation_item_id' =>
-                            null,
+                        'source_quotation_item_id' => null,
 
                         ...$item,
 
-                        'created_at' =>
-                            now(),
+                        'created_at' => now(),
 
-                        'updated_at' =>
-                            now(),
+                        'updated_at' => now(),
                     ]);
             }
 
-
             DB::table('payments')->insert([
-                'invoice_id' =>
-                    $invoiceId,
+                'invoice_id' => $invoiceId,
 
-                'payment_date' =>
-                    $data['payment_date'],
+                'payment_date' => $data['payment_date'],
 
-                'amount' =>
-                    $this->integerToDecimal(
-                        $paymentAmount
-                    ),
+                'amount' => $this->integerToDecimal(
+                    $paymentAmount
+                ),
 
-                'payment_method' =>
-                    $data['payment_method'],
+                'payment_method' => $data['payment_method'],
 
-                'reference' =>
-                    $data['payment_reference'] ?? null,
+                'reference' => $data['payment_reference'] ?? null,
 
-                'notes' =>
-                    $data['payment_notes'] ?? null,
+                'notes' => $data['payment_notes'] ?? null,
 
-                'created_by' =>
-                    auth()->id(),
+                'created_by' => auth()->id(),
 
-                'created_at' =>
-                    now(),
+                'created_at' => now(),
 
-                'updated_at' =>
-                    now(),
+                'updated_at' => now(),
             ]);
 
-
-            if (!empty($data['schedule_enabled'])) {
+            if (! empty($data['schedule_enabled'])) {
 
                 $invoiceDate =
                     Carbon::parse(
                         $data['invoice_date']
                     );
 
-                $dueDays = !empty($data['due_date'])
+                $dueDays = ! empty($data['due_date'])
                     ? (int) $invoiceDate->diffInDays(
                         Carbon::parse(
                             $data['due_date']
@@ -722,84 +623,59 @@ class InvoiceController extends Controller
                     )
                     : 30;
 
-
                 DB::table(
                     'recurring_invoice_schedules'
                 )->insert([
 
-                    'company_id' =>
-                        $company->id,
+                    'company_id' => $company->id,
 
-                    'customer_id' =>
-                        $customer->id,
+                    'customer_id' => $customer->id,
 
-                    'template_id' =>
-                        $template->id,
+                    'template_id' => $template->id,
 
-                    'frequency' =>
-                        $data['schedule_frequency'],
+                    'frequency' => $data['schedule_frequency'],
 
-                    'next_run_date' =>
-                        $data['schedule_start_date'],
+                    'next_run_date' => $data['schedule_start_date'],
 
-                    'end_date' =>
-                        $data['schedule_end_date'] ?? null,
+                    'end_date' => $data['schedule_end_date'] ?? null,
 
-                    'due_days' =>
-                        $dueDays,
+                    'due_days' => $dueDays,
 
-                    'invoice_data' =>
-                        json_encode([
-                            'subject' =>
-                                $data['subject'] ?? null,
+                    'invoice_data' => json_encode([
+                        'subject' => $data['subject'] ?? null,
 
-                            'reference' =>
-                                $data['reference'] ?? null,
+                        'reference' => $data['reference'] ?? null,
 
-                            'additional_charges' =>
-                                $data['additional_charges'] ?? 0,
+                        'additional_charges' => $data['additional_charges'] ?? 0,
 
-                            'notes' =>
-                                $data['notes'] ?? null,
+                        'notes' => $data['notes'] ?? null,
 
-                            'terms_conditions' =>
-                                $data['terms_conditions'] ?? null,
+                        'terms_conditions' => $data['terms_conditions'] ?? null,
 
-                            'items' =>
-                                $data['items'],
-                        ], JSON_UNESCAPED_UNICODE),
+                        'items' => $data['items'],
+                    ], JSON_UNESCAPED_UNICODE),
 
-                    'status' =>
-                        'ACTIVE',
+                    'status' => 'ACTIVE',
 
-                    'last_run_date' =>
-                        null,
+                    'last_run_date' => null,
 
-                    'last_invoice_id' =>
-                        null,
+                    'last_invoice_id' => null,
 
-                    'created_by' =>
-                        auth()->id(),
+                    'created_by' => auth()->id(),
 
-                    'created_at' =>
-                        now(),
+                    'created_at' => now(),
 
-                    'updated_at' =>
-                        now(),
+                    'updated_at' => now(),
                 ]);
             }
-
 
             DB::table('companies')
                 ->where('id', $company->id)
                 ->update([
-                    'invoice_next_number' =>
-                        $company->invoice_next_number + 1,
+                    'invoice_next_number' => $company->invoice_next_number + 1,
 
-                    'updated_at' =>
-                        now(),
+                    'updated_at' => now(),
                 ]);
-
 
             return redirect()
                 ->route('invoices.index', [
@@ -812,83 +688,57 @@ class InvoiceController extends Controller
         });
     }
 
-
     public function preview(Request $request)
     {
         $data = $request->validate([
-            'company_id' =>
-                'required|exists:companies,id',
+            'company_id' => 'required|exists:companies,id',
 
-            'customer_id' =>
-                'required|exists:customers,id',
+            'customer_id' => 'required|exists:customers,id',
 
-            'template_id' =>
-                'required|exists:company_templates,id',
+            'template_id' => 'required|exists:company_templates,id',
 
-            'invoice_date' =>
-                'required|date',
+            'invoice_date' => 'required|date',
 
-            'due_date' =>
-                'nullable|date|after_or_equal:invoice_date',
+            'due_date' => 'nullable|date|after_or_equal:invoice_date',
 
-            'subject' =>
-                'nullable|string|max:255',
+            'subject' => 'nullable|string|max:255',
 
-            'reference' =>
-                'nullable|string|max:255',
+            'reference' => 'nullable|string|max:255',
 
-            'additional_charges' =>
-                'nullable|numeric|min:0',
+            'additional_charges' => 'nullable|numeric|min:0',
 
-            'notes' =>
-                'nullable|string',
+            'notes' => 'nullable|string',
 
-            'terms_conditions' =>
-                'nullable|string',
+            'terms_conditions' => 'nullable|string',
 
-            'payment_method' =>
-                'required|in:CASH,BANK_TRANSFER,CARD,CHEQUE,OTHER',
+            'payment_method' => 'required|in:CASH,BANK_TRANSFER,CARD,CHEQUE,OTHER',
 
-            'payment_date' =>
-                'required|date',
+            'payment_date' => 'required|date',
 
-            'payment_amount' =>
-                'required|numeric|gt:0',
+            'payment_amount' => 'required|numeric|gt:0',
 
-            'payment_reference' =>
-                'nullable|string|max:255',
+            'payment_reference' => 'nullable|string|max:255',
 
-            'payment_notes' =>
-                'nullable|string',
+            'payment_notes' => 'nullable|string',
 
-            'items' =>
-                'required|array|min:1',
+            'items' => 'required|array|min:1',
 
-            'items.*.item_name' =>
-                'required|string|max:255',
+            'items.*.item_name' => 'required|string|max:255',
 
-            'items.*.description' =>
-                'nullable|string',
+            'items.*.description' => 'nullable|string',
 
-            'items.*.quantity' =>
-                'required|numeric|gt:0',
+            'items.*.quantity' => 'required|numeric|gt:0',
 
-            'items.*.unit' =>
-                'nullable|string|max:50',
+            'items.*.unit' => 'nullable|string|max:50',
 
-            'items.*.unit_price' =>
-                'required|numeric|min:0',
+            'items.*.unit_price' => 'required|numeric|min:0',
 
-            'items.*.discount_type' =>
-                'required|in:NONE,PERCENTAGE,FIXED',
+            'items.*.discount_type' => 'required|in:NONE,PERCENTAGE,FIXED',
 
-            'items.*.discount_value' =>
-                'required|numeric|min:0',
+            'items.*.discount_value' => 'required|numeric|min:0',
 
-            'items.*.tax_percentage' =>
-                'required|numeric|min:0|max:100',
+            'items.*.tax_percentage' => 'required|numeric|min:0|max:100',
         ]);
-
 
         $company = DB::table('companies')
             ->where('id', $data['company_id'])
@@ -906,21 +756,21 @@ class InvoiceController extends Controller
             ->first();
 
         abort_if(
-            !$company || !$customer || !$template,
+            ! $company || ! $customer || ! $template,
             404
         );
-
 
         $bank = DB::table('company_bank_details')
             ->where('company_id', $company->id)
             ->first();
-
 
         $subtotal = 0;
         $discountTotal = 0;
         $taxTotal = 0;
         $items = [];
 
+        $isVatEnabled = (bool) ($company->vat_enabled ?? $company->vat_registered ?? false);
+        $companyVatRate = $isVatEnabled ? (float) ($company->tax_percentage ?? $company->vat_percentage ?? 0) : 0;
 
         foreach ($data['items'] as $item) {
 
@@ -959,13 +809,13 @@ class InvoiceController extends Controller
             $taxable =
                 $lineSubtotal - $discountAmount;
 
-            $taxPercentage =
-                (float) $item['tax_percentage'];
+            $taxPercentage = $isVatEnabled
+                ? (float) ($item['tax_percentage'] ?? $companyVatRate)
+                : 0;
 
-            $taxAmount =
-                $taxable *
-                $taxPercentage /
-                100;
+            $taxAmount = $isVatEnabled
+                ? ($taxable * $taxPercentage / 100)
+                : 0;
 
             $lineTotal =
                 $taxable + $taxAmount;
@@ -975,41 +825,29 @@ class InvoiceController extends Controller
             $taxTotal += $taxAmount;
 
             $items[] = (object) [
-                'item_name' =>
-                    $item['item_name'],
+                'item_name' => $item['item_name'],
 
-                'description' =>
-                    $item['description'] ?? null,
+                'description' => $item['description'] ?? null,
 
-                'quantity' =>
-                    $qty,
+                'quantity' => $qty,
 
-                'unit' =>
-                    $item['unit'] ?? null,
+                'unit' => $item['unit'] ?? null,
 
-                'unit_price' =>
-                    $price,
+                'unit_price' => $price,
 
-                'discount_type' =>
-                    $discountType,
+                'discount_type' => $discountType,
 
-                'discount_value' =>
-                    $discountValue,
+                'discount_value' => $discountValue,
 
-                'discount_amount' =>
-                    $discountAmount,
+                'discount_amount' => $discountAmount,
 
-                'tax_percentage' =>
-                    $taxPercentage,
+                'tax_percentage' => $taxPercentage,
 
-                'tax_amount' =>
-                    $taxAmount,
+                'tax_amount' => $taxAmount,
 
-                'line_total' =>
-                    $lineTotal,
+                'line_total' => $lineTotal,
             ];
         }
-
 
         $additionalCharges =
             (float) (
@@ -1025,101 +863,74 @@ class InvoiceController extends Controller
         $paymentAmount =
             (float) $data['payment_amount'];
 
-
         if ($paymentAmount > $grandTotal) {
             throw ValidationException::withMessages([
-                'payment_amount' =>
-                    'Payment amount cannot exceed invoice total.',
+                'payment_amount' => 'Payment amount cannot exceed invoice total.',
             ]);
         }
-
 
         $balance =
             $grandTotal - $paymentAmount;
 
-
         $invoiceNumber =
             rtrim($company->invoice_prefix, '-')
-            . '-'
-            . now()->format('Y')
-            . '-'
-            . str_pad(
+            .'-'
+            .now()->format('Y')
+            .'-'
+            .str_pad(
                 $company->invoice_next_number,
                 4,
                 '0',
                 STR_PAD_LEFT
             );
 
-
         $invoice = (object) [
-            'invoice_number' =>
-                $invoiceNumber,
+            'invoice_number' => $invoiceNumber,
 
-            'invoice_date' =>
-                $data['invoice_date'],
+            'invoice_date' => $data['invoice_date'],
 
-            'due_date' =>
-                $data['due_date'] ?? null,
+            'due_date' => $data['due_date'] ?? null,
 
-            'subject' =>
-                $data['subject'] ?? null,
+            'subject' => $data['subject'] ?? null,
 
-            'reference' =>
-                $data['reference'] ?? null,
+            'reference' => $data['reference'] ?? null,
 
-            'subtotal' =>
-                $subtotal,
+            'subtotal' => $subtotal,
 
-            'discount_amount' =>
-                $discountTotal,
+            'discount_amount' => $discountTotal,
 
-            'tax_amount' =>
-                $taxTotal,
+            'tax_amount' => $taxTotal,
 
-            'additional_charges' =>
-                $additionalCharges,
+            'additional_charges' => $additionalCharges,
 
-            'grand_total' =>
-                $grandTotal,
+            'grand_total' => $grandTotal,
 
-            'amount_paid' =>
-                $paymentAmount,
+            'amount_paid' => $paymentAmount,
 
-            'balance_amount' =>
-                $balance,
+            'balance_amount' => $balance,
 
-            'status' =>
-                $balance <= 0
+            'status' => $balance <= 0
                     ? 'PAID'
                     : 'PARTIALLY_PAID',
 
-            'notes' =>
-                $data['notes'] ?? null,
+            'notes' => $data['notes'] ?? null,
 
-            'terms_conditions' =>
-                $data['terms_conditions'] ?? null,
+            'terms_conditions' => $data['terms_conditions'] ?? null,
         ];
-
 
         $payments = collect([
             (object) [
-                'payment_date' =>
-                    $data['payment_date'],
+                'payment_date' => $data['payment_date'],
 
-                'amount' =>
-                    $paymentAmount,
+                'amount' => $paymentAmount,
 
-                'payment_method' =>
-                    $data['payment_method'],
+                'payment_method' => $data['payment_method'],
 
-                'reference' =>
-                    $data['payment_reference'] ?? null,
+                'reference' => $data['payment_reference'] ?? null,
 
-                'notes' =>
-                    $data['payment_notes'] ?? null,
-            ]
+                'notes' => $data['payment_notes'] ?? null,
+            ],
         ]);
-
 
         return view('invoices.pdf', compact(
             'invoice',
@@ -1132,15 +943,13 @@ class InvoiceController extends Controller
         ));
     }
 
-
     public function downloadPdf($id)
     {
         $invoice = DB::table('invoices')
             ->where('id', $id)
             ->first();
 
-        abort_if(!$invoice, 404);
-
+        abort_if(! $invoice, 404);
 
         $company =
             $invoice->company_snapshot
@@ -1154,7 +963,6 @@ class InvoiceController extends Controller
                     )
                     ->first();
 
-
         $customer =
             $invoice->customer_snapshot
                 ? json_decode(
@@ -1166,7 +974,6 @@ class InvoiceController extends Controller
                         $invoice->customer_id
                     )
                     ->first();
-
 
         $template =
             $invoice->template_snapshot
@@ -1180,19 +987,16 @@ class InvoiceController extends Controller
                     )
                     ->first();
 
-
         $items = DB::table('invoice_items')
             ->where('invoice_id', $id)
             ->orderBy('sort_order')
             ->get();
-
 
         $payments = DB::table('payments')
             ->where('invoice_id', $id)
             ->orderBy('payment_date')
             ->orderBy('id')
             ->get();
-
 
         $bank = DB::table('company_bank_details')
             ->where(
@@ -1201,9 +1005,11 @@ class InvoiceController extends Controller
             )
             ->first();
 
+        $isVatEnabled = (bool) ($company->vat_enabled ?? $company->vat_registered ?? false);
+        $templateView = $isVatEnabled ? 'pdf.invoices.tax-invoice' : 'pdf.invoices.normal';
 
         $pdf = Pdf::loadView(
-            'invoices.pdf',
+            $templateView,
             compact(
                 'invoice',
                 'company',
@@ -1215,12 +1021,10 @@ class InvoiceController extends Controller
             )
         );
 
-
         return $pdf->download(
-            $invoice->invoice_number . '.pdf'
+            $invoice->invoice_number.'.pdf'
         );
     }
-
 
     private function decimalToInteger(
         mixed $value,
@@ -1284,7 +1088,6 @@ class InvoiceController extends Controller
             : $result;
     }
 
-
     private function integerToDecimal(
         int $value,
         int $scale = 2
@@ -1316,8 +1119,8 @@ class InvoiceController extends Controller
 
         return
             ($negative ? '-' : '')
-            . $whole
-            . '.'
-            . $fraction;
+            .$whole
+            .'.'
+            .$fraction;
     }
 }
