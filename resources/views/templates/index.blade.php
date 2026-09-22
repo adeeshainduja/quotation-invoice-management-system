@@ -35,7 +35,7 @@
 @include('partials.sidebar')
 
 
-<div class="page">
+<div class="page content-wrapper">
 
 
     @include('partials.topbar')
@@ -511,9 +511,6 @@
                     templates
 
                 </span>
-
-
-                {{ $templates->links() }}
 
             </div>
 
