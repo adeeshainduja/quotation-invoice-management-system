@@ -241,12 +241,81 @@ test('reject quotation changes status to rejected', function () {
     expect($updatedQuotation->status)->toBe('REJECTED');
 });
 
-test('convert quotation to invoice creates draft invoice and links quotation', function () {
+test('convert quotation to invoice redirects to invoice create page with quotation_id', function () {
     $env = setupTestEnvironment();
     $env['quotation']->update(['status' => 'ACCEPTED']);
 
     $response = $this->actingAs($env['admin'])
         ->post(route('quotations.convert', $env['quotation']->id));
+
+    $response->assertRedirect(route('invoices.create', ['quotation_id' => $env['quotation']->id]));
+    $response->assertSessionHas('success');
+
+    // Quotation remains ACCEPTED (not CONVERTED) until invoice is actually created
+    $quotationAfter = Quotation::find($env['quotation']->id);
+    expect($quotationAfter->status)->toBe('ACCEPTED');
+});
+
+test('accept quotation redirects to invoice create page with quotation_id', function () {
+    $env = setupTestEnvironment();
+    $env['quotation']->update(['status' => 'SENT']);
+
+    $response = $this->actingAs($env['admin'])
+        ->post(route('quotations.accept', $env['quotation']->id));
+
+    $response->assertRedirect(route('invoices.create', ['quotation_id' => $env['quotation']->id]));
+    $response->assertSessionHas('success');
+
+    $quotationAfter = Quotation::find($env['quotation']->id);
+    expect($quotationAfter->status)->toBe('ACCEPTED');
+});
+
+test('invoice create page is pre-filled when quotation_id is provided', function () {
+    $env = setupTestEnvironment();
+    $env['quotation']->update(['status' => 'ACCEPTED']);
+
+    $response = $this->actingAs($env['admin'])
+        ->get(route('invoices.create', ['quotation_id' => $env['quotation']->id]));
+
+    $response->assertStatus(200);
+    $response->assertSee($env['quotation']->quotation_number);
+    $response->assertSee('Pre-filled from Quotation');
+    $response->assertSee('Item 1');
+});
+
+test('creating invoice with quotation_id marks quotation as CONVERTED and links invoice', function () {
+    $env = setupTestEnvironment();
+    $env['quotation']->update(['status' => 'ACCEPTED']);
+
+    $response = $this->actingAs($env['admin'])
+        ->post(route('invoices.store'), [
+            'company_id' => $env['company']->id,
+            'customer_id' => $env['customer']->id,
+            'template_id' => $env['invoiceTemplate']->id,
+            'quotation_id' => $env['quotation']->id,
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'reference' => $env['quotation']->quotation_number,
+            'subject' => 'Invoice for Quotation '.$env['quotation']->quotation_number,
+            'notes' => 'Test notes',
+            'terms_conditions' => 'Test terms',
+            'additional_charges' => 0,
+            'payment_method' => 'BANK_TRANSFER',
+            'payment_date' => now()->toDateString(),
+            'payment_amount' => 900,
+            'items' => [
+                [
+                    'item_name' => 'Item 1',
+                    'description' => 'Desc 1',
+                    'quantity' => 2,
+                    'unit' => 'pcs',
+                    'unit_price' => 500,
+                    'discount_type' => 'PERCENTAGE',
+                    'discount_value' => 10,
+                    'tax_percentage' => 0,
+                ],
+            ],
+        ]);
 
     $invoice = Invoice::latest('id')->first();
     expect($invoice)->not->toBeNull();
@@ -254,27 +323,40 @@ test('convert quotation to invoice creates draft invoice and links quotation', f
     $response->assertRedirect(route('invoices.show', $invoice->id));
     $response->assertSessionHas('success');
 
-    expect($invoice->status)->toBe('DRAFT');
     expect($invoice->quotation_id)->toBe($env['quotation']->id);
-    expect((float) $invoice->grand_total)->toBe((float) $env['quotation']->grand_total);
-    expect((float) $invoice->amount_paid)->toBe(0.0);
-    expect((float) $invoice->balance_amount)->toBe((float) $env['quotation']->grand_total);
 
     $quotationAfter = Quotation::find($env['quotation']->id);
     expect($quotationAfter->status)->toBe('CONVERTED');
     expect($quotationAfter->converted_invoice_id)->toBe($invoice->id);
-
-    $invoiceItems = DB::table('invoice_items')->where('invoice_id', $invoice->id)->get();
-    expect($invoiceItems)->toHaveCount(1);
-    expect($invoiceItems->first()->item_name)->toBe('Item 1');
 });
 
 test('view invoice details page works', function () {
     $env = setupTestEnvironment();
-    $env['quotation']->update(['status' => 'ACCEPTED']);
 
+    // Create an invoice directly via store()
     $this->actingAs($env['admin'])
-        ->post(route('quotations.convert', $env['quotation']->id));
+        ->post(route('invoices.store'), [
+            'company_id' => $env['company']->id,
+            'customer_id' => $env['customer']->id,
+            'template_id' => $env['invoiceTemplate']->id,
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'payment_method' => 'CASH',
+            'payment_date' => now()->toDateString(),
+            'payment_amount' => 900,
+            'items' => [
+                [
+                    'item_name' => 'Item 1',
+                    'description' => 'Desc 1',
+                    'quantity' => 2,
+                    'unit' => 'pcs',
+                    'unit_price' => 500,
+                    'discount_type' => 'PERCENTAGE',
+                    'discount_value' => 10,
+                    'tax_percentage' => 0,
+                ],
+            ],
+        ]);
 
     $invoice = Invoice::latest('id')->first();
 

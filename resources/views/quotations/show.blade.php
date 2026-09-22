@@ -439,13 +439,14 @@
                 @endif
 
                 @if($quotation->status === 'ACCEPTED')
-                    <form method="POST" action="{{ route('quotations.convert', $quotation->id) }}" style="display:inline;">
-                        @csrf
-                        <button type="submit" class="primary">
-                            <i data-lucide="receipt"></i>
-                            Convert to Invoice
-                        </button>
-                    </form>
+                    <a
+                        href="{{ route('invoices.create', ['quotation_id' => $quotation->id]) }}"
+                        class="primary"
+                        style="display: flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 15px; border: 1px solid #1474e8; border-radius: 7px; background: #1474e8; color: white; text-decoration: none; font-size: 13px; font-weight: 500;"
+                    >
+                        <i data-lucide="receipt"></i>
+                        Create Invoice
+                    </a>
                 @endif
 
                 @if(!empty($quotation->converted_invoice_id))

@@ -1414,7 +1414,9 @@ class QuotationController extends Controller
             ['status' => 'ACCEPTED']
         );
 
-        return back()->with('success', 'Quotation marked as accepted.');
+        return redirect()
+            ->route('invoices.create', ['quotation_id' => $id])
+            ->with('success', 'Quotation accepted. Review and create the invoice below.');
     }
 
     public function reject(Request $request, $id)
@@ -1470,124 +1472,8 @@ class QuotationController extends Controller
                 ->with('info', 'This quotation has already been converted to an invoice.');
         }
 
-        $company = DB::table('companies')->where('id', $quotation->company_id)->first();
-        abort_if(! $company, 404);
-
-        $customer = DB::table('customers')->where('id', $quotation->customer_id)->first();
-
-        // Find an invoice template for this company
-        $invoiceTemplate = DB::table('company_templates')
-            ->where('company_id', $quotation->company_id)
-            ->where('document_type', 'INVOICE')
-            ->where('status', 'ACTIVE')
-            ->first()
-            ?: DB::table('company_templates')
-                ->where('company_id', $quotation->company_id)
-                ->where('document_type', 'INVOICE')
-                ->first();
-
-        $templateId = $invoiceTemplate ? $invoiceTemplate->id : $quotation->template_id;
-
-        $items = DB::table('quotation_items')
-            ->where('quotation_id', $id)
-            ->orderBy('sort_order')
-            ->get();
-
-        $invoiceId = DB::transaction(function () use ($quotation, $company, $customer, $templateId, $invoiceTemplate, $items, $id) {
-            $invoiceNumber = rtrim($company->invoice_prefix, '-')
-                .'-'
-                .now()->format('Y')
-                .'-'
-                .str_pad(
-                    $company->invoice_next_number,
-                    4,
-                    '0',
-                    STR_PAD_LEFT
-                );
-
-            $newInvoiceId = DB::table('invoices')->insertGetId([
-                'company_id' => $quotation->company_id,
-                'customer_id' => $quotation->customer_id,
-                'quotation_id' => $quotation->id,
-                'invoice_number' => $invoiceNumber,
-                'invoice_date' => now()->toDateString(),
-                'due_date' => now()->addDays(14)->toDateString(),
-                'subject' => 'Invoice for Quotation '.$quotation->quotation_number,
-                'reference' => $quotation->quotation_number,
-                'subtotal' => $quotation->subtotal,
-                'discount_type' => $quotation->discount_type,
-                'discount_value' => $quotation->discount_value,
-                'discount_amount' => $quotation->discount_amount,
-                'tax_percentage' => $quotation->tax_percentage,
-                'tax_amount' => $quotation->tax_amount,
-                'vat_enabled' => $quotation->vat_enabled,
-                'vat_percentage' => $quotation->vat_percentage,
-                'vat_amount' => $quotation->vat_amount,
-                'additional_charges' => $quotation->additional_charges ?? 0,
-                'grand_total' => $quotation->grand_total,
-                'amount_paid' => 0.00,
-                'balance_amount' => $quotation->grand_total,
-                'status' => 'DRAFT',
-                'notes' => $quotation->notes,
-                'terms_conditions' => $quotation->terms_conditions,
-                'template_id' => $templateId,
-                'company_snapshot' => ! empty($quotation->company_snapshot) ? $quotation->company_snapshot : json_encode($company, JSON_UNESCAPED_UNICODE),
-                'customer_snapshot' => ! empty($quotation->customer_snapshot) ? $quotation->customer_snapshot : json_encode($customer, JSON_UNESCAPED_UNICODE),
-                'template_snapshot' => $invoiceTemplate ? json_encode($invoiceTemplate, JSON_UNESCAPED_UNICODE) : $quotation->template_snapshot,
-                'created_by' => auth()->id(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            foreach ($items as $item) {
-                DB::table('invoice_items')->insert([
-                    'invoice_id' => $newInvoiceId,
-                    'source_quotation_item_id' => $item->id,
-                    'sort_order' => $item->sort_order,
-                    'item_name' => $item->item_name,
-                    'description' => $item->description,
-                    'quantity' => $item->quantity,
-                    'unit' => $item->unit,
-                    'unit_price' => $item->unit_price,
-                    'discount_type' => $item->discount_type,
-                    'discount_value' => $item->discount_value,
-                    'discount_amount' => $item->discount_amount,
-                    'tax_percentage' => $item->tax_percentage,
-                    'tax_amount' => $item->tax_amount,
-                    'line_total' => $item->line_total,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-
-            DB::table('companies')
-                ->where('id', $company->id)
-                ->update([
-                    'invoice_next_number' => $company->invoice_next_number + 1,
-                ]);
-
-            DB::table('quotations')
-                ->where('id', $id)
-                ->update([
-                    'status' => 'CONVERTED',
-                    'converted_invoice_id' => $newInvoiceId,
-                    'updated_at' => now(),
-                ]);
-
-            ActivityLogger::log(
-                'CONVERT TO INVOICE',
-                'Quotation',
-                $id,
-                $quotation->company_id,
-                ['status' => 'ACCEPTED'],
-                ['status' => 'CONVERTED', 'invoice_id' => $newInvoiceId, 'invoice_number' => $invoiceNumber]
-            );
-
-            return $newInvoiceId;
-        });
-
         return redirect()
-            ->route('invoices.show', $invoiceId)
-            ->with('success', 'Quotation successfully converted to invoice.');
+            ->route('invoices.create', ['quotation_id' => $id])
+            ->with('success', 'Review and create the invoice below.');
     }
 }
