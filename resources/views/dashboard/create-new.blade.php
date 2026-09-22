@@ -17,6 +17,7 @@
 @include('partials.sidebar')
 
 <div class="page">
+    @include('partials.topbar')
 
     <main>
 

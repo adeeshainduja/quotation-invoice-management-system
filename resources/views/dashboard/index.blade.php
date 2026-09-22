@@ -16,51 +16,7 @@
 
 <div class="page">
 
-    <header class="topbar">
-        <button class="menu"><i data-lucide="menu"></i></button>
-
-        <div class="topbar-right">
-
-            <form method="GET" action="{{ route('dashboard') }}">
-                <select name="company_id"
-                        class="company-select"
-                        onchange="this.form.submit()">
-
-                    @foreach($companies as $item)
-                        <option value="{{ $item->id }}"
-                            {{ $companyId == $item->id ? 'selected' : '' }}>
-                            {{ $item->name }}
-                        </option>
-                    @endforeach
-
-                </select>
-            </form>
-
-            <div class="notification">
-                <i data-lucide="bell"></i>
-                <span></span>
-            </div>
-
-            <div class="user">
-                <div class="avatar">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                </div>
-
-                <div>
-                    <strong>{{ auth()->user()->name }}</strong>
-                    <small>Administrator</small>
-                </div>
-
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button class="logout" type="submit">
-                        <i data-lucide="log-out"></i>
-                    </button>
-                </form>
-            </div>
-
-        </div>
-    </header>
+    @include('partials.topbar')
 
 
     <main>
