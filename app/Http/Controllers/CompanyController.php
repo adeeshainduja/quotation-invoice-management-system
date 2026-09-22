@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -126,11 +127,20 @@ class CompanyController extends Controller
         $data['quotation_next_number'] = $data['quotation_next_number'] ?? 1;
         $data['invoice_next_number'] = $data['invoice_next_number'] ?? 1;
 
-        DB::table('companies')->insert([
+        $id = DB::table('companies')->insertGetId([
             ...$data,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        ActivityLogger::log(
+            'CREATE',
+            'Company',
+            $id,
+            $id,
+            null,
+            ['name' => $data['name'], 'status' => $data['status']]
+        );
 
         return redirect()->route('companies.index')->with('success', 'Company created successfully.');
     }
@@ -208,6 +218,15 @@ class CompanyController extends Controller
             'updated_at' => now(),
         ]);
 
+        ActivityLogger::log(
+            'UPDATE',
+            'Company',
+            $id,
+            $id,
+            ['name' => $company->name, 'status' => $company->status],
+            ['name' => $data['name'], 'status' => $data['status']]
+        );
+
         return redirect()->route('companies.index')->with('success', 'Company updated successfully.');
     }
 
@@ -224,6 +243,26 @@ class CompanyController extends Controller
             'status' => $newStatus,
             'updated_at' => now(),
         ]);
+
+        if ($newStatus === 'INACTIVE') {
+            ActivityLogger::log(
+                'DEACTIVATE',
+                'Company',
+                $id,
+                $id,
+                ['status' => 'ACTIVE'],
+                ['status' => 'INACTIVE']
+            );
+        } else {
+            ActivityLogger::log(
+                'UPDATE',
+                'Company',
+                $id,
+                $id,
+                ['status' => 'INACTIVE'],
+                ['status' => 'ACTIVE']
+            );
+        }
 
         $message = $newStatus === 'ACTIVE'
             ? "Company '{$company->name}' activated successfully."

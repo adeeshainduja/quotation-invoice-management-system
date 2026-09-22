@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -175,6 +176,15 @@ class CustomerController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        ActivityLogger::log(
+            'CREATE',
+            'Customer',
+            $id,
+            $data['company_id'],
+            null,
+            ['customer_name' => $data['customer_name'], 'business_name' => $data['business_name']]
+        );
 
         return redirect()
             ->route('customers.show', ['id' => $id, 'company_id' => $data['company_id']])
