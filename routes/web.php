@@ -83,6 +83,16 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:companies.create')
         ->name('companies.store');
 
+    Route::get('/companies/{id}/edit', [CompanyController::class, 'edit'])
+        ->whereNumber('id')
+        ->middleware('permission:companies.edit')
+        ->name('companies.edit');
+
+    Route::put('/companies/{id}', [CompanyController::class, 'update'])
+        ->whereNumber('id')
+        ->middleware('permission:companies.edit')
+        ->name('companies.update');
+
     /*
     |--------------------------------------------------------------------------
     | Customers
