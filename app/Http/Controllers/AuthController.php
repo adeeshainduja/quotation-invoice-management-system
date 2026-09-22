@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -27,6 +28,15 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             return redirect()->intended(route('dashboard'));
+        }
+
+        $existingUser = User::where('email', $request->email)->first();
+        if ($existingUser && $existingUser->status === 'INACTIVE' && Hash::check($request->password, $existingUser->password)) {
+            return back()
+                ->withErrors([
+                    'email' => 'Your account is deactivated. Please contact admin.',
+                ])
+                ->onlyInput('email');
         }
 
         return back()

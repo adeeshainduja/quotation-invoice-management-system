@@ -16,7 +16,7 @@ class CheckPermission
 
         $user = $request->user();
 
-        if (!$user || !$user->hasPermission($permission)) {
+        if (! $user || $user->status !== 'ACTIVE' || ! $user->hasPermission($permission)) {
 
             abort(
                 403,
