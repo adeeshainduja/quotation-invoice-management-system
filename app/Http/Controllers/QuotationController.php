@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ActivityLogger;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -628,6 +629,19 @@ class QuotationController extends Controller
                     'quotation_next_number' => $company->quotation_next_number + 1,
                 ]);
 
+            ActivityLogger::log(
+                'CREATE',
+                'Quotation',
+                $quotationId,
+                $company->id,
+                null,
+                [
+                    'quotation_number' => $number,
+                    'grand_total' => $grandTotal,
+                    'status' => 'DRAFT',
+                ]
+            );
+
             return redirect()
                 ->route(
                     'quotations.show',
@@ -1221,16 +1235,14 @@ class QuotationController extends Controller
                 ]);
             }
 
-            DB::table('activity_logs')->insert([
-                'user_id' => auth()->id(),
-                'company_id' => $quotation->company_id,
-                'entity_type' => 'QUOTATION',
-                'entity_id' => $id,
-                'action' => 'QUOTATION_UPDATED',
-                'old_data' => json_encode(['grand_total' => $quotation->grand_total]),
-                'new_data' => json_encode(['grand_total' => $grandTotal]),
-                'created_at' => now(),
-            ]);
+            ActivityLogger::log(
+                'UPDATE',
+                'Quotation',
+                $id,
+                $quotation->company_id,
+                ['grand_total' => $quotation->grand_total, 'customer_id' => $quotation->customer_id],
+                ['grand_total' => $grandTotal, 'customer_id' => $customer->id]
+            );
         });
 
         return redirect()
@@ -1324,16 +1336,14 @@ class QuotationController extends Controller
                     'quotation_next_number' => $company->quotation_next_number + 1,
                 ]);
 
-            DB::table('activity_logs')->insert([
-                'user_id' => auth()->id(),
-                'company_id' => $quotation->company_id,
-                'entity_type' => 'QUOTATION',
-                'entity_id' => $newId,
-                'action' => 'QUOTATION_CLONED',
-                'old_data' => json_encode(['cloned_from_id' => $quotation->id, 'cloned_from_number' => $quotation->quotation_number]),
-                'new_data' => json_encode(['quotation_number' => $number, 'status' => 'DRAFT']),
-                'created_at' => now(),
-            ]);
+            ActivityLogger::log(
+                'CLONE',
+                'Quotation',
+                $newId,
+                $quotation->company_id,
+                ['cloned_from_id' => $quotation->id, 'cloned_from_number' => $quotation->quotation_number],
+                ['quotation_number' => $number, 'status' => 'DRAFT']
+            );
 
             return $newId;
         });
@@ -1363,16 +1373,14 @@ class QuotationController extends Controller
                 'updated_at' => now(),
             ]);
 
-        DB::table('activity_logs')->insert([
-            'user_id' => auth()->id(),
-            'company_id' => $quotation->company_id,
-            'entity_type' => 'QUOTATION',
-            'entity_id' => $id,
-            'action' => 'QUOTATION_SENT',
-            'old_data' => json_encode(['status' => $quotation->status]),
-            'new_data' => json_encode(['status' => 'SENT']),
-            'created_at' => now(),
-        ]);
+        ActivityLogger::log(
+            'SEND',
+            'Quotation',
+            $id,
+            $quotation->company_id,
+            ['status' => $quotation->status],
+            ['status' => 'SENT']
+        );
 
         return back()->with('success', 'Quotation marked as sent.');
     }
@@ -1397,16 +1405,14 @@ class QuotationController extends Controller
                 'updated_at' => now(),
             ]);
 
-        DB::table('activity_logs')->insert([
-            'user_id' => auth()->id(),
-            'company_id' => $quotation->company_id,
-            'entity_type' => 'QUOTATION',
-            'entity_id' => $id,
-            'action' => 'QUOTATION_ACCEPTED',
-            'old_data' => json_encode(['status' => $quotation->status]),
-            'new_data' => json_encode(['status' => 'ACCEPTED']),
-            'created_at' => now(),
-        ]);
+        ActivityLogger::log(
+            'ACCEPT',
+            'Quotation',
+            $id,
+            $quotation->company_id,
+            ['status' => $quotation->status],
+            ['status' => 'ACCEPTED']
+        );
 
         return back()->with('success', 'Quotation marked as accepted.');
     }
@@ -1431,16 +1437,14 @@ class QuotationController extends Controller
                 'updated_at' => now(),
             ]);
 
-        DB::table('activity_logs')->insert([
-            'user_id' => auth()->id(),
-            'company_id' => $quotation->company_id,
-            'entity_type' => 'QUOTATION',
-            'entity_id' => $id,
-            'action' => 'QUOTATION_REJECTED',
-            'old_data' => json_encode(['status' => $quotation->status]),
-            'new_data' => json_encode(['status' => 'REJECTED']),
-            'created_at' => now(),
-        ]);
+        ActivityLogger::log(
+            'REJECT',
+            'Quotation',
+            $id,
+            $quotation->company_id,
+            ['status' => $quotation->status],
+            ['status' => 'REJECTED']
+        );
 
         return back()->with('success', 'Quotation marked as rejected.');
     }
@@ -1570,16 +1574,14 @@ class QuotationController extends Controller
                     'updated_at' => now(),
                 ]);
 
-            DB::table('activity_logs')->insert([
-                'user_id' => auth()->id(),
-                'company_id' => $quotation->company_id,
-                'entity_type' => 'QUOTATION',
-                'entity_id' => $id,
-                'action' => 'QUOTATION_CONVERTED',
-                'old_data' => json_encode(['status' => 'ACCEPTED']),
-                'new_data' => json_encode(['status' => 'CONVERTED', 'invoice_id' => $newInvoiceId, 'invoice_number' => $invoiceNumber]),
-                'created_at' => now(),
-            ]);
+            ActivityLogger::log(
+                'CONVERT TO INVOICE',
+                'Quotation',
+                $id,
+                $quotation->company_id,
+                ['status' => 'ACCEPTED'],
+                ['status' => 'CONVERTED', 'invoice_id' => $newInvoiceId, 'invoice_number' => $invoiceNumber]
+            );
 
             return $newInvoiceId;
         });

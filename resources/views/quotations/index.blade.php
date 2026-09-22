@@ -446,25 +446,79 @@
                                             'quotations.show',
                                             $quotation->id
                                         ) }}"
+                                        title="View Quotation"
                                     >
                                         <i data-lucide="eye"></i>
                                         View
                                     </a>
 
-
                                     @if($quotation->status !== 'CONVERTED')
-
-                                        <a href="{{ route('quotations.edit', $quotation->id) }}">
+                                        <a
+                                            href="{{ route('quotations.edit', $quotation->id) }}"
+                                            title="Edit Quotation"
+                                        >
                                             <i data-lucide="pencil"></i>
                                             Edit
                                         </a>
-
                                     @endif
 
+                                    <a
+                                        href="{{ route('quotations.pdf', $quotation->id) }}"
+                                        target="_blank"
+                                        title="Export Quotation PDF"
+                                    >
+                                        <i data-lucide="download"></i>
+                                        Export PDF
+                                    </a>
 
-                                    <button type="button">
-                                        <i data-lucide="more-horizontal"></i>
-                                    </button>
+                                    <div class="dropdown-wrapper" style="position: relative; display: inline-block;">
+                                        <button
+                                            type="button"
+                                            class="more-btn"
+                                            onclick="toggleQuotationDropdown(event, {{ $quotation->id }})"
+                                            title="More Actions"
+                                        >
+                                            <i data-lucide="more-horizontal"></i>
+                                        </button>
+
+                                        <div
+                                            id="dropdown-{{ $quotation->id }}"
+                                            class="dropdown-menu-list"
+                                            style="display: none; position: absolute; right: 0; top: calc(100% + 4px); background: #ffffff; border: 1px solid #dce5ef; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 170px; z-index: 1050; padding: 6px 0;"
+                                        >
+                                            <form method="POST" action="{{ route('quotations.clone', $quotation->id) }}">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item-btn" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: none; background: transparent; color: #263b58; font-size: 12px; font-weight: 500; cursor: pointer; text-align: left;">
+                                                    <i data-lucide="copy" style="width: 14px; height: 14px;"></i>
+                                                    Clone Quotation
+                                                </button>
+                                            </form>
+
+                                            <form method="POST" action="{{ route('quotations.send', $quotation->id) }}">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item-btn" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: none; background: transparent; color: #263b58; font-size: 12px; font-weight: 500; cursor: pointer; text-align: left;">
+                                                    <i data-lucide="send" style="width: 14px; height: 14px;"></i>
+                                                    Mark as Sent
+                                                </button>
+                                            </form>
+
+                                            <form method="POST" action="{{ route('quotations.reject', $quotation->id) }}" onsubmit="return confirm('Are you sure you want to reject this quotation?');">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item-btn" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: none; background: transparent; color: #dc2626; font-size: 12px; font-weight: 500; cursor: pointer; text-align: left;">
+                                                    <i data-lucide="x-circle" style="width: 14px; height: 14px; color: #dc2626;"></i>
+                                                    Reject
+                                                </button>
+                                            </form>
+
+                                            <form method="POST" action="{{ route('quotations.convert', $quotation->id) }}">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item-btn" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: none; background: transparent; color: #1677ff; font-size: 12px; font-weight: 500; cursor: pointer; text-align: left;">
+                                                    <i data-lucide="receipt" style="width: 14px; height: 14px; color: #1677ff;"></i>
+                                                    Convert To Invoice
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
 
                                 </div>
 
@@ -533,7 +587,35 @@
 
 <script>
     lucide.createIcons();
+
+    function toggleQuotationDropdown(event, id) {
+        event.stopPropagation();
+        const currentDropdown = document.getElementById('dropdown-' + id);
+        const isOpen = currentDropdown && currentDropdown.style.display === 'block';
+
+        document.querySelectorAll('.dropdown-menu-list').forEach(el => {
+            el.style.display = 'none';
+        });
+
+        if (currentDropdown && !isOpen) {
+            currentDropdown.style.display = 'block';
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown-wrapper')) {
+            document.querySelectorAll('.dropdown-menu-list').forEach(el => {
+                el.style.display = 'none';
+            });
+        }
+    });
 </script>
+
+<style>
+    .dropdown-item-btn:hover {
+        background: #f1f5f9 !important;
+    }
+</style>
 
 </body>
 </html>

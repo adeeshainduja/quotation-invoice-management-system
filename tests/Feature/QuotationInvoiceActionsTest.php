@@ -352,3 +352,133 @@ test('cannot edit a converted quotation', function () {
     $response->assertRedirect(route('quotations.show', $env['quotation']->id));
     $response->assertSessionHas('error');
 });
+
+test('edit invoice page loads with prefilled data', function () {
+    $env = setupTestEnvironment();
+    $env['quotation']->update(['status' => 'ACCEPTED']);
+    $this->actingAs($env['admin'])
+        ->post(route('quotations.convert', $env['quotation']->id));
+    $invoice = Invoice::latest('id')->first();
+
+    $response = $this->actingAs($env['admin'])
+        ->get(route('invoices.edit', $invoice->id));
+
+    $response->assertStatus(200);
+    $response->assertSee($invoice->invoice_number);
+    $response->assertSee('John Business');
+    $response->assertSee('Item 1');
+});
+
+test('update invoice updates details items and totals and logs activity', function () {
+    $env = setupTestEnvironment();
+    $env['quotation']->update(['status' => 'ACCEPTED']);
+    $this->actingAs($env['admin'])
+        ->post(route('quotations.convert', $env['quotation']->id));
+    $invoice = Invoice::latest('id')->first();
+
+    $updateData = [
+        'customer_id' => $env['customer']->id,
+        'template_id' => $env['invoiceTemplate']->id,
+        'invoice_date' => now()->toDateString(),
+        'due_date' => now()->addDays(20)->toDateString(),
+        'subject' => 'Updated Subject',
+        'reference' => 'PO-999',
+        'additional_charges' => 50,
+        'notes' => 'Updated invoice notes',
+        'terms_conditions' => 'Updated invoice terms',
+        'items' => [
+            [
+                'item_name' => 'Updated Service',
+                'description' => 'Updated description',
+                'quantity' => 2,
+                'unit' => 'hours',
+                'unit_price' => 300,
+                'discount_type' => 'FIXED',
+                'discount_value' => 50,
+                'tax_percentage' => 0,
+            ],
+        ],
+    ];
+
+    $response = $this->actingAs($env['admin'])
+        ->put(route('invoices.update', $invoice->id), $updateData);
+
+    $response->assertRedirect(route('invoices.show', $invoice->id));
+    $response->assertSessionHas('success');
+
+    $updatedInvoice = Invoice::find($invoice->id);
+    expect($updatedInvoice->subject)->toBe('Updated Subject');
+    expect($updatedInvoice->reference)->toBe('PO-999');
+    expect((float) $updatedInvoice->subtotal)->toBe(600.0);
+    expect((float) $updatedInvoice->discount_amount)->toBe(50.0);
+    expect((float) $updatedInvoice->additional_charges)->toBe(50.0);
+    expect((float) $updatedInvoice->grand_total)->toBe(600.0);
+
+    $log = DB::table('activity_logs')
+        ->where('entity_type', 'Invoice')
+        ->where('entity_id', $invoice->id)
+        ->where('action', 'UPDATE')
+        ->first();
+
+    expect($log)->not->toBeNull();
+});
+
+test('activity logs are properly populated across operations and displayed on index', function () {
+    $env = setupTestEnvironment();
+
+    // 1. Quotation reject creates log
+    $env['quotation']->update(['status' => 'SENT']);
+    $this->actingAs($env['admin'])
+        ->post(route('quotations.reject', $env['quotation']->id));
+
+    $rejectLog = DB::table('activity_logs')
+        ->where('entity_type', 'Quotation')
+        ->where('entity_id', $env['quotation']->id)
+        ->where('action', 'REJECT')
+        ->first();
+    expect($rejectLog)->not->toBeNull();
+
+    // 2. Quotation accept creates log
+    $this->actingAs($env['admin'])
+        ->post(route('quotations.accept', $env['quotation']->id));
+
+    $acceptLog = DB::table('activity_logs')
+        ->where('entity_type', 'Quotation')
+        ->where('entity_id', $env['quotation']->id)
+        ->where('action', 'ACCEPT')
+        ->first();
+    expect($acceptLog)->not->toBeNull();
+
+    // 3. Convert quotation creates log
+    $this->actingAs($env['admin'])
+        ->post(route('quotations.convert', $env['quotation']->id));
+
+    $convertLog = DB::table('activity_logs')
+        ->where('entity_type', 'Quotation')
+        ->where('entity_id', $env['quotation']->id)
+        ->where('action', 'CONVERT TO INVOICE')
+        ->first();
+    expect($convertLog)->not->toBeNull();
+
+    $invoice = Invoice::latest('id')->first();
+
+    // 4. Download invoice PDF creates log
+    $this->actingAs($env['admin'])
+        ->get(route('invoices.pdf', $invoice->id));
+
+    $pdfLog = DB::table('activity_logs')
+        ->where('entity_type', 'Invoice')
+        ->where('entity_id', $invoice->id)
+        ->where('action', 'EXPORT PDF')
+        ->first();
+    expect($pdfLog)->not->toBeNull();
+
+    // 5. Activity logs index displays logs
+    $response = $this->actingAs($env['admin'])
+        ->get(route('activity-logs.index'));
+
+    $response->assertStatus(200);
+    $response->assertSee('Activity Logs');
+    $response->assertSee('Quotation');
+    $response->assertSee('Invoice');
+});
