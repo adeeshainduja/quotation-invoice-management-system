@@ -17,9 +17,16 @@ class ReportController extends Controller
      */
     public function index(Request $request): View
     {
-        $companies = Company::where('status', 'ACTIVE')
-            ->orderBy('name')
-            ->get(['id', 'name', 'currency']);
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
+        if ($request->filled('company_id')) {
+            abort_if(! $user->hasCompanyAccess($request->integer('company_id')), 403, 'Unauthorized company access.');
+        }
+
+        $companies = $user->isAdmin()
+            ? Company::where('status', 'ACTIVE')->orderBy('name')->get(['id', 'name', 'currency'])
+            : $user->accessibleCompanies()->where('companies.status', 'ACTIVE')->orderBy('name')->get(['companies.id', 'companies.name', 'companies.currency']);
 
         $companyId = $request->filled('company_id')
             ? $request->integer('company_id')
@@ -78,13 +85,20 @@ class ReportController extends Controller
      */
     public function invoiceReport(Request $request): View
     {
-        $companies = Company::where('status', 'ACTIVE')
-            ->orderBy('name')
-            ->get(['id', 'name', 'currency']);
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
+        if ($request->filled('company_id')) {
+            abort_if(! $user->hasCompanyAccess($request->integer('company_id')), 403, 'Unauthorized company access.');
+        }
+
+        $companies = $user->isAdmin()
+            ? Company::where('status', 'ACTIVE')->orderBy('name')->get(['id', 'name', 'currency'])
+            : $user->accessibleCompanies()->where('companies.status', 'ACTIVE')->orderBy('name')->get(['companies.id', 'companies.name', 'companies.currency']);
 
         $companyId = $request->filled('company_id')
             ? $request->integer('company_id')
-            : null;
+            : ($user->isAdmin() ? null : optional($companies->first())->id);
 
         $selectedCompany = $companyId ? $companies->firstWhere('id', $companyId) : null;
         $currency = $selectedCompany->currency ?? ($companies->first()->currency ?? 'LKR');
@@ -178,13 +192,20 @@ class ReportController extends Controller
      */
     public function paymentReport(Request $request): View
     {
-        $companies = Company::where('status', 'ACTIVE')
-            ->orderBy('name')
-            ->get(['id', 'name', 'currency']);
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
+        if ($request->filled('company_id')) {
+            abort_if(! $user->hasCompanyAccess($request->integer('company_id')), 403, 'Unauthorized company access.');
+        }
+
+        $companies = $user->isAdmin()
+            ? Company::where('status', 'ACTIVE')->orderBy('name')->get(['id', 'name', 'currency'])
+            : $user->accessibleCompanies()->where('companies.status', 'ACTIVE')->orderBy('name')->get(['companies.id', 'companies.name', 'companies.currency']);
 
         $companyId = $request->filled('company_id')
             ? $request->integer('company_id')
-            : null;
+            : ($user->isAdmin() ? null : optional($companies->first())->id);
 
         $selectedCompany = $companyId ? $companies->firstWhere('id', $companyId) : null;
         $currency = $selectedCompany->currency ?? ($companies->first()->currency ?? 'LKR');
@@ -271,13 +292,20 @@ class ReportController extends Controller
      */
     public function quotationReport(Request $request): View
     {
-        $companies = Company::where('status', 'ACTIVE')
-            ->orderBy('name')
-            ->get(['id', 'name', 'currency']);
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
+        if ($request->filled('company_id')) {
+            abort_if(! $user->hasCompanyAccess($request->integer('company_id')), 403, 'Unauthorized company access.');
+        }
+
+        $companies = $user->isAdmin()
+            ? Company::where('status', 'ACTIVE')->orderBy('name')->get(['id', 'name', 'currency'])
+            : $user->accessibleCompanies()->where('companies.status', 'ACTIVE')->orderBy('name')->get(['companies.id', 'companies.name', 'companies.currency']);
 
         $companyId = $request->filled('company_id')
             ? $request->integer('company_id')
-            : null;
+            : ($user->isAdmin() ? null : optional($companies->first())->id);
 
         $selectedCompany = $companyId ? $companies->firstWhere('id', $companyId) : null;
         $currency = $selectedCompany->currency ?? ($companies->first()->currency ?? 'LKR');
@@ -350,13 +378,20 @@ class ReportController extends Controller
      */
     public function customerReport(Request $request): View
     {
-        $companies = Company::where('status', 'ACTIVE')
-            ->orderBy('name')
-            ->get(['id', 'name', 'currency']);
+        $user = $request->user();
+        abort_if(! $user || $user->status !== 'ACTIVE', 403, 'Your account is deactivated. Please contact admin.');
+
+        if ($request->filled('company_id')) {
+            abort_if(! $user->hasCompanyAccess($request->integer('company_id')), 403, 'Unauthorized company access.');
+        }
+
+        $companies = $user->isAdmin()
+            ? Company::where('status', 'ACTIVE')->orderBy('name')->get(['id', 'name', 'currency'])
+            : $user->accessibleCompanies()->where('companies.status', 'ACTIVE')->orderBy('name')->get(['companies.id', 'companies.name', 'companies.currency']);
 
         $companyId = $request->filled('company_id')
             ? $request->integer('company_id')
-            : null;
+            : ($user->isAdmin() ? null : optional($companies->first())->id);
 
         $selectedCompany = $companyId ? $companies->firstWhere('id', $companyId) : null;
         $currency = $selectedCompany->currency ?? ($companies->first()->currency ?? 'LKR');

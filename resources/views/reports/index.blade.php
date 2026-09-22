@@ -144,59 +144,7 @@
 
 <div class="page">
 
-    <header class="topbar">
-        <button class="menu" type="button"><i data-lucide="menu"></i></button>
-
-        <div class="topbar-right">
-
-            @if($companies->isNotEmpty())
-                <form method="GET" action="{{ route('reports.index') }}">
-                    <select name="company_id"
-                            class="company-select"
-                            onchange="this.form.submit()">
-
-                        @if($companies->count() > 1)
-                            <option value="" {{ empty($companyId) ? 'selected' : '' }}>
-                                All Companies
-                            </option>
-                        @endif
-
-                        @foreach($companies as $item)
-                            <option value="{{ $item->id }}"
-                                {{ $companyId == $item->id ? 'selected' : '' }}>
-                                {{ $item->name }}
-                            </option>
-                        @endforeach
-
-                    </select>
-                </form>
-            @endif
-
-            <div class="notification">
-                <i data-lucide="bell"></i>
-                <span></span>
-            </div>
-
-            <div class="user">
-                <div class="avatar">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                </div>
-
-                <div>
-                    <strong>{{ auth()->user()->name }}</strong>
-                    <small>{{ auth()->user()->isAdmin() ? 'Administrator' : 'User' }}</small>
-                </div>
-
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button class="logout" type="submit">
-                        <i data-lucide="log-out"></i>
-                    </button>
-                </form>
-            </div>
-
-        </div>
-    </header>
+    @include('partials.topbar')
 
     <main>
 

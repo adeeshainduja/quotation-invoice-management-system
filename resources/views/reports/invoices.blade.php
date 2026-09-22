@@ -215,27 +215,7 @@
 
 <div class="page">
 
-    {{-- TOPBAR --}}
-    <header class="topbar">
-        <button class="menu-btn" type="button"><i data-lucide="menu"></i></button>
-
-        <div class="topbar-right">
-            <div class="notification">
-                <i data-lucide="bell"></i>
-                <span></span>
-            </div>
-
-            <div class="user-box">
-                <div class="avatar">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                </div>
-                <div>
-                    <strong>{{ auth()->user()->name }}</strong>
-                    <small>{{ auth()->user()->isAdmin() ? 'Administrator' : 'User' }}</small>
-                </div>
-            </div>
-        </div>
-    </header>
+    @include('partials.topbar')
 
     <main>
 
