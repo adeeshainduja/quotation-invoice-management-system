@@ -164,12 +164,13 @@
         </div>
     </div>
 
-    <div class="permission-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
-        @php
-            $userCompanyIds = old('companies', $selectedCompanies ?? []);
-        @endphp
+    @php
+        $userCompanyIds = old('companies', $selectedCompanies ?? []);
+    @endphp
+
+    <div class="scroll-selection-box" style="max-height: 250px; overflow-y: auto;">
         @forelse($companies as $comp)
-            <label class="permission-option" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; background: #fafafa; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <label class="scroll-selection-item">
                 <input
                     type="checkbox"
                     name="companies[]"
@@ -177,13 +178,13 @@
                     class="company-checkbox"
                     {{ in_array($comp->id, $userCompanyIds) ? 'checked' : '' }}
                 >
-                <div style="display: flex; flex-direction: column;">
-                    <strong style="color: #1f2937; font-size: 14px;">{{ $comp->name }}</strong>
-                    <small style="color: #6b7280;">{{ $comp->currency ?? 'LKR' }} &bull; {{ $comp->city ?? '' }}</small>
-                </div>
+                <span class="selection-name">{{ $comp->name }}</span>
+                @if(!empty($comp->currency) || !empty($comp->city))
+                    <span class="selection-meta">({{ $comp->currency ?? 'LKR' }} &bull; {{ $comp->city ?? '' }})</span>
+                @endif
             </label>
         @empty
-            <p style="color: #6b7280; font-size: 14px;">No active companies available to assign.</p>
+            <p class="scroll-selection-empty">No active companies available to assign.</p>
         @endforelse
     </div>
 
@@ -208,38 +209,44 @@
             <div class="module-heading">
                 <strong>Invoice Templates</strong>
             </div>
-            @forelse($invoiceTemplates as $tpl)
-                <label class="permission-option" style="padding: 8px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input
-                        type="checkbox"
-                        name="templates[]"
-                        value="{{ $tpl->id }}"
-                        {{ in_array($tpl->id, $userTemplateIds) ? 'checked' : '' }}
-                    >
-                    <span>{{ $tpl->template_name }}</span>
-                </label>
-            @empty
-                <p style="color: #6b7280; font-size: 13px; padding: 10px;">No invoice templates found.</p>
-            @endforelse
+            <div class="scroll-selection-box group-inner" style="max-height: 250px; overflow-y: auto;">
+                @forelse($invoiceTemplates as $tpl)
+                    <label class="scroll-selection-item">
+                        <input
+                            type="checkbox"
+                            name="templates[]"
+                            value="{{ $tpl->id }}"
+                            class="template-checkbox"
+                            {{ in_array($tpl->id, $userTemplateIds) ? 'checked' : '' }}
+                        >
+                        <span class="selection-name">{{ $tpl->template_name }}</span>
+                    </label>
+                @empty
+                    <p class="scroll-selection-empty">No invoice templates found.</p>
+                @endforelse
+            </div>
         </div>
 
         <div class="permission-group">
             <div class="module-heading">
                 <strong>Quotation Templates</strong>
             </div>
-            @forelse($quotationTemplates as $tpl)
-                <label class="permission-option" style="padding: 8px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input
-                        type="checkbox"
-                        name="templates[]"
-                        value="{{ $tpl->id }}"
-                        {{ in_array($tpl->id, $userTemplateIds) ? 'checked' : '' }}
-                    >
-                    <span>{{ $tpl->template_name }}</span>
-                </label>
-            @empty
-                <p style="color: #6b7280; font-size: 13px; padding: 10px;">No quotation templates found.</p>
-            @endforelse
+            <div class="scroll-selection-box group-inner" style="max-height: 250px; overflow-y: auto;">
+                @forelse($quotationTemplates as $tpl)
+                    <label class="scroll-selection-item">
+                        <input
+                            type="checkbox"
+                            name="templates[]"
+                            value="{{ $tpl->id }}"
+                            class="template-checkbox"
+                            {{ in_array($tpl->id, $userTemplateIds) ? 'checked' : '' }}
+                        >
+                        <span class="selection-name">{{ $tpl->template_name }}</span>
+                    </label>
+                @empty
+                    <p class="scroll-selection-empty">No quotation templates found.</p>
+                @endforelse
+            </div>
         </div>
     </div>
 

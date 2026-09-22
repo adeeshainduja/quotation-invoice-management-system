@@ -57,6 +57,18 @@ class User extends Authenticatable
             return true;
         }
 
+        if ($permission === 'quotations.update' || $permission === 'quotations.edit') {
+            return $this->permissions()
+                ->whereIn('key', ['quotations.update', 'quotations.edit'])
+                ->exists();
+        }
+
+        if ($permission === 'invoices.update' || $permission === 'invoices.edit') {
+            return $this->permissions()
+                ->whereIn('key', ['invoices.update', 'invoices.edit'])
+                ->exists();
+        }
+
         return $this->permissions()
             ->where('key', $permission)
             ->exists();

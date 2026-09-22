@@ -365,3 +365,62 @@ test('10. company deactivation blocks new transactions while keeping historical 
     ]);
     $createCustomer->assertForbidden();
 });
+
+test('11. admin user assignment UI renders scrollable containers and saves company/template selections', function () {
+    $admin = User::factory()->create(['role' => 'ADMIN', 'status' => 'ACTIVE']);
+    $company1 = createTestCompany(['name' => 'Alpha Solutions']);
+    $company2 = createTestCompany(['name' => 'Beta Systems']);
+    $invTemplate = createTestTemplate($company1->id, ['document_type' => 'INVOICE', 'template_name' => 'Standard Invoice']);
+    $quoTemplate = createTestTemplate($company1->id, ['document_type' => 'QUOTATION', 'template_name' => 'Standard Quotation']);
+
+    // Admin visits Create User page
+    $createResponse = $this->actingAs($admin)->get(route('users.create'));
+    $createResponse->assertOk();
+    $createResponse->assertSee('scroll-selection-box');
+    $createResponse->assertSee('max-height: 250px; overflow-y: auto;', false);
+    $createResponse->assertSee('Alpha Solutions');
+    $createResponse->assertSee('Beta Systems');
+    $createResponse->assertSee('Standard Invoice');
+    $createResponse->assertSee('Standard Quotation');
+
+    // Admin stores a new user with selected companies and templates
+    $storeResponse = $this->actingAs($admin)->post(route('users.store'), [
+        'name' => 'Test Assigned User',
+        'email' => 'assigned@example.com',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'status' => 'ACTIVE',
+        'companies' => [$company1->id],
+        'templates' => [$invTemplate->id, $quoTemplate->id],
+        'permissions' => [Permission::first()->id],
+    ]);
+    $storeResponse->assertRedirect(route('users.index'));
+
+    $createdUser = User::where('email', 'assigned@example.com')->first();
+    expect($createdUser)->not->toBeNull()
+        ->and($createdUser->companies->pluck('id')->all())->toBe([$company1->id])
+        ->and($createdUser->templates->pluck('id')->sort()->values()->all())->toBe([$invTemplate->id, $quoTemplate->id]);
+
+    // Admin visits Edit User page
+    $editResponse = $this->actingAs($admin)->get(route('users.edit', $createdUser->id));
+    $editResponse->assertOk();
+    $editResponse->assertSee('scroll-selection-box');
+    $editResponse->assertSee('max-height: 250px; overflow-y: auto;', false);
+    $editResponse->assertSee('value="'.$company1->id.'"', false);
+    $editResponse->assertSee('value="'.$company2->id.'"', false);
+
+    // Admin updates user assignments
+    $updateResponse = $this->actingAs($admin)->put(route('users.update', $createdUser->id), [
+        'name' => 'Test Assigned User Updated',
+        'email' => 'assigned@example.com',
+        'status' => 'ACTIVE',
+        'companies' => [$company2->id],
+        'templates' => [$invTemplate->id],
+        'permissions' => [Permission::first()->id],
+    ]);
+    $updateResponse->assertRedirect(route('users.index'));
+
+    $createdUser->refresh();
+    expect($createdUser->companies->pluck('id')->all())->toBe([$company2->id])
+        ->and($createdUser->templates->pluck('id')->all())->toBe([$invTemplate->id]);
+});
