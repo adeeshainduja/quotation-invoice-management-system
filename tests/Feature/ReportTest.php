@@ -556,3 +556,152 @@ test('admin can filter quotation reports by status', function () {
     $response->assertSee('Johnson Ltd');
     $response->assertSee('Beta Corp');
 });
+
+test('guests are redirected to login when visiting customer reports', function () {
+    $response = $this->get(route('reports.customers'));
+
+    $response->assertRedirect(route('login'));
+});
+
+test('user without reports.customer.view permission receives 403 on customer reports', function () {
+    $this->seed(PermissionSeeder::class);
+
+    $user = User::factory()->create([
+        'role' => 'USER',
+        'status' => 'ACTIVE',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('reports.customers'));
+
+    $response->assertStatus(403);
+});
+
+test('user with reports.customer.view can view customer reports with cards and export buttons', function () {
+    $this->seed(PermissionSeeder::class);
+
+    $user = User::factory()->create([
+        'role' => 'USER',
+        'status' => 'ACTIVE',
+    ]);
+
+    $permission = Permission::where('key', 'reports.customer.view')->first();
+    $user->permissions()->attach($permission);
+
+    $response = $this->actingAs($user)->get(route('reports.customers'));
+
+    $response->assertOk();
+    $response->assertSee('Customer Reports');
+    $response->assertSee('Customer performance, revenue analysis and outstanding balances');
+    $response->assertSee('Export PDF');
+    $response->assertSee('Export Excel');
+    $response->assertSee('Print');
+    $response->assertSee('Total Customers');
+    $response->assertSee('Active Customers');
+    $response->assertSee('Customer Revenue');
+    $response->assertSee('Payments Received');
+    $response->assertSee('Outstanding Balance');
+    $response->assertSee('Total Quotations');
+    $response->assertSee('Avg. Customer Value');
+    $response->assertSee('Top Customers by Revenue');
+    $response->assertSee('Outstanding Customers');
+});
+
+test('admin can access customer reports automatically', function () {
+    $this->seed(PermissionSeeder::class);
+
+    $admin = User::factory()->create([
+        'role' => 'ADMIN',
+        'status' => 'ACTIVE',
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('reports.customers'));
+
+    $response->assertOk();
+    $response->assertSee('Customer Reports');
+});
+
+test('reports dashboard links to customer reports page', function () {
+    $this->seed(PermissionSeeder::class);
+
+    $admin = User::factory()->create([
+        'role' => 'ADMIN',
+        'status' => 'ACTIVE',
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('reports.index'));
+
+    $response->assertOk();
+    $response->assertSee('Top Customers by Revenue');
+    $response->assertSee('Client Outstanding Balances');
+    $response->assertSee(route('reports.customers'));
+});
+
+test('admin can filter customer reports by company and sees customer table data', function () {
+    $this->seed(PermissionSeeder::class);
+
+    $admin = User::factory()->create([
+        'role' => 'ADMIN',
+        'status' => 'ACTIVE',
+    ]);
+
+    $company = Company::create([
+        'name' => 'Delta Ltd',
+        'registration_number' => 'REG-DELTA',
+        'address_line_1' => '10 Delta Road',
+        'city' => 'Colombo',
+        'country' => 'Sri Lanka',
+        'phone' => '+94116666666',
+        'email' => 'delta@example.com',
+        'website' => 'https://delta.example.com',
+        'logo_path' => 'logos/delta.png',
+        'quotation_prefix' => 'QT-',
+        'invoice_prefix' => 'INV-',
+        'status' => 'ACTIVE',
+        'currency' => 'LKR',
+    ]);
+
+    $customer = Customer::create([
+        'company_id' => $company->id,
+        'customer_name' => 'Carol White',
+        'business_name' => 'White Holdings',
+        'email' => 'carol@example.com',
+        'address_line_1' => '7 Business Park',
+        'city' => 'Colombo',
+        'country' => 'Sri Lanka',
+        'status' => 'ACTIVE',
+    ]);
+
+    $template = CompanyTemplate::create([
+        'company_id' => $company->id,
+        'document_type' => 'INVOICE',
+        'template_name' => 'Standard Invoice',
+        'is_default' => true,
+    ]);
+
+    Invoice::create([
+        'company_id' => $company->id,
+        'customer_id' => $customer->id,
+        'invoice_number' => 'INV-D01',
+        'invoice_date' => '2026-09-10',
+        'due_date' => '2026-09-25',
+        'subtotal' => 8000,
+        'grand_total' => 8000,
+        'amount_paid' => 5000,
+        'balance_amount' => 3000,
+        'status' => 'PARTIALLY_PAID',
+        'template_id' => $template->id,
+        'company_snapshot' => ['name' => 'Delta Ltd'],
+        'customer_snapshot' => ['name' => 'Carol White'],
+        'template_snapshot' => ['name' => 'Standard Invoice'],
+        'created_by' => $admin->id,
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('reports.customers', [
+        'company_id' => $company->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertSee('White Holdings');
+    $response->assertSee('Delta Ltd');
+    $response->assertSee('LKR 8,000.00');
+});

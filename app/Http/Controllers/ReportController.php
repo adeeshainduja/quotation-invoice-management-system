@@ -344,4 +344,168 @@ class ReportController extends Controller
             'convertedQuotations' => $convertedQuotations,
         ]);
     }
+
+    /**
+     * Display the detailed Customer Report.
+     */
+    public function customerReport(Request $request): View
+    {
+        $companies = Company::where('status', 'ACTIVE')
+            ->orderBy('name')
+            ->get(['id', 'name', 'currency']);
+
+        $companyId = $request->filled('company_id')
+            ? $request->integer('company_id')
+            : null;
+
+        $selectedCompany = $companyId ? $companies->firstWhere('id', $companyId) : null;
+        $currency = $selectedCompany->currency ?? ($companies->first()->currency ?? 'LKR');
+
+        $from = $request->query('from') ?: $request->query('from_date');
+        $to = $request->query('to') ?: $request->query('to_date');
+        $customerId = $request->filled('customer_id') ? $request->integer('customer_id') : null;
+
+        // Build customer base query
+        $customerQuery = Customer::query()
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->when($customerId, fn ($q) => $q->where('id', $customerId));
+
+        // Build invoice query scoped to filters for aggregated metrics
+        $invoiceQuery = Invoice::query()
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
+            ->when($from, fn ($q) => $q->whereDate('invoice_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('invoice_date', '<=', $to))
+            ->where('status', '!=', 'CANCELLED');
+
+        // Build payment query scoped to filters
+        $paymentQuery = Payment::query()
+            ->when($companyId, fn ($q) => $q->whereHas('invoice', fn ($iq) => $iq->where('company_id', $companyId)))
+            ->when($customerId, fn ($q) => $q->whereHas('invoice', fn ($iq) => $iq->where('customer_id', $customerId)))
+            ->when($from, fn ($q) => $q->whereDate('payment_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('payment_date', '<=', $to));
+
+        // --- Summary Cards ---
+        $totalCustomers = (clone $customerQuery)->count();
+        $activeCustomers = (clone $customerQuery)->where('status', 'ACTIVE')->count();
+        $totalCustomerRevenue = (float) (clone $invoiceQuery)->sum('grand_total');
+        $totalPaymentsReceived = (float) (clone $paymentQuery)->sum('amount');
+
+        $outstandingBalance = (float) Invoice::query()
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
+            ->whereNotIn('status', ['PAID', 'CANCELLED'])
+            ->where('balance_amount', '>', 0)
+            ->sum('balance_amount');
+
+        $totalQuotationsGenerated = Quotation::query()
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
+            ->count();
+
+        $averageCustomerValue = $totalCustomers > 0
+            ? round($totalCustomerRevenue / $totalCustomers, 2)
+            : 0.0;
+
+        // --- Customer Detail Table ---
+        $customers = (clone $customerQuery)
+            ->with('company')
+            ->withCount([
+                'invoices as invoice_count' => fn ($q) => $q
+                    ->when($from, fn ($iq) => $iq->whereDate('invoice_date', '>=', $from))
+                    ->when($to, fn ($iq) => $iq->whereDate('invoice_date', '<=', $to))
+                    ->where('status', '!=', 'CANCELLED'),
+                'quotations as quotation_count' => fn ($q) => $q
+                    ->when($from, fn ($qq) => $qq->whereDate('quotation_date', '>=', $from))
+                    ->when($to, fn ($qq) => $qq->whereDate('quotation_date', '<=', $to)),
+            ])
+            ->withSum(
+                ['invoices as total_purchase_value' => fn ($q) => $q
+                    ->when($from, fn ($iq) => $iq->whereDate('invoice_date', '>=', $from))
+                    ->when($to, fn ($iq) => $iq->whereDate('invoice_date', '<=', $to))
+                    ->where('status', '!=', 'CANCELLED'),
+                ],
+                'grand_total'
+            )
+            ->withSum(
+                ['invoices as total_amount_paid' => fn ($q) => $q
+                    ->when($from, fn ($iq) => $iq->whereDate('invoice_date', '>=', $from))
+                    ->when($to, fn ($iq) => $iq->whereDate('invoice_date', '<=', $to))
+                    ->where('status', '!=', 'CANCELLED'),
+                ],
+                'amount_paid'
+            )
+            ->withSum(
+                ['invoices as total_balance' => fn ($q) => $q
+                    ->whereNotIn('status', ['PAID', 'CANCELLED'])
+                    ->where('balance_amount', '>', 0),
+                ],
+                'balance_amount'
+            )
+            ->withMax(
+                ['invoices as last_invoice_date' => fn ($q) => $q
+                    ->where('status', '!=', 'CANCELLED'),
+                ],
+                'invoice_date'
+            )
+            ->orderByDesc('total_purchase_value')
+            ->paginate(15)
+            ->withQueryString();
+
+        // --- Top Customers by Revenue (unfiltered by date for overview) ---
+        $topCustomers = Customer::query()
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->with('company')
+            ->withSum(
+                ['invoices as total_revenue' => fn ($q) => $q->where('status', '!=', 'CANCELLED')],
+                'grand_total'
+            )
+            ->orderByDesc('total_revenue')
+            ->limit(5)
+            ->get();
+
+        // --- Customers With Outstanding Balances ---
+        $outstandingCustomers = Customer::query()
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->with('company')
+            ->whereHas('invoices', fn ($q) => $q
+                ->whereNotIn('status', ['PAID', 'CANCELLED'])
+                ->where('balance_amount', '>', 0)
+            )
+            ->withSum(
+                ['invoices as outstanding_amount' => fn ($q) => $q
+                    ->whereNotIn('status', ['PAID', 'CANCELLED'])
+                    ->where('balance_amount', '>', 0),
+                ],
+                'balance_amount'
+            )
+            ->orderByDesc('outstanding_amount')
+            ->limit(5)
+            ->get();
+
+        $allCustomers = Customer::query()
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->orderBy('business_name')
+            ->get(['id', 'business_name', 'customer_name', 'company_id']);
+
+        return view('reports.customers', [
+            'customers' => $customers,
+            'topCustomers' => $topCustomers,
+            'outstandingCustomers' => $outstandingCustomers,
+            'allCustomers' => $allCustomers,
+            'companies' => $companies,
+            'companyId' => $companyId,
+            'customerId' => $customerId,
+            'from' => $from,
+            'to' => $to,
+            'currency' => $currency,
+            'totalCustomers' => $totalCustomers,
+            'activeCustomers' => $activeCustomers,
+            'totalCustomerRevenue' => $totalCustomerRevenue,
+            'totalPaymentsReceived' => $totalPaymentsReceived,
+            'outstandingBalance' => $outstandingBalance,
+            'totalQuotationsGenerated' => $totalQuotationsGenerated,
+            'averageCustomerValue' => $averageCustomerValue,
+        ]);
+    }
 }

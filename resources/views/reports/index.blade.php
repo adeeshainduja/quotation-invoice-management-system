@@ -398,12 +398,16 @@
 
                     <ul class="placeholder-list">
                         <li class="placeholder-item">
-                            <span>Top Customers by Revenue</span>
-                            <span class="placeholder-badge">Placeholder</span>
+                            <a href="{{ route('reports.customers', $companyId ? ['company_id' => $companyId] : []) }}" style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-decoration: none; color: inherit;">
+                                <span style="color: #2563eb; font-weight: 500;">Top Customers by Revenue</span>
+                                <span class="placeholder-badge" style="background: #e0e7ff; color: #1d4ed8;">View Report →</span>
+                            </a>
                         </li>
                         <li class="placeholder-item">
-                            <span>Client Outstanding Balances</span>
-                            <span class="placeholder-badge">Placeholder</span>
+                            <a href="{{ route('reports.customers', $companyId ? ['company_id' => $companyId] : []) }}" style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-decoration: none; color: inherit;">
+                                <span style="color: #2563eb; font-weight: 500;">Client Outstanding Balances</span>
+                                <span class="placeholder-badge" style="background: #e0e7ff; color: #1d4ed8;">View Report →</span>
+                            </a>
                         </li>
                     </ul>
                 </div>
