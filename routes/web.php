@@ -145,6 +145,41 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:quotations.pdf')
         ->name('quotations.pdf');
 
+    Route::get('/quotations/{id}/edit', [QuotationController::class, 'edit'])
+        ->whereNumber('id')
+        ->middleware('permission:quotations.update')
+        ->name('quotations.edit');
+
+    Route::put('/quotations/{id}', [QuotationController::class, 'update'])
+        ->whereNumber('id')
+        ->middleware('permission:quotations.update')
+        ->name('quotations.update');
+
+    Route::post('/quotations/{id}/clone', [QuotationController::class, 'clone'])
+        ->whereNumber('id')
+        ->middleware('permission:quotations.create')
+        ->name('quotations.clone');
+
+    Route::post('/quotations/{id}/send', [QuotationController::class, 'markAsSent'])
+        ->whereNumber('id')
+        ->middleware('permission:quotations.update')
+        ->name('quotations.send');
+
+    Route::post('/quotations/{id}/accept', [QuotationController::class, 'accept'])
+        ->whereNumber('id')
+        ->middleware('permission:quotations.update')
+        ->name('quotations.accept');
+
+    Route::post('/quotations/{id}/reject', [QuotationController::class, 'reject'])
+        ->whereNumber('id')
+        ->middleware('permission:quotations.update')
+        ->name('quotations.reject');
+
+    Route::post('/quotations/{id}/convert', [QuotationController::class, 'convertToInvoice'])
+        ->whereNumber('id')
+        ->middleware('permission:invoices.create')
+        ->name('quotations.convert');
+
     Route::get('/quotations/{id}', [QuotationController::class, 'show'])
         ->whereNumber('id')
         ->middleware('permission:quotations.view')
