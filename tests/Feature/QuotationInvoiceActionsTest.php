@@ -114,6 +114,54 @@ function setupTestEnvironment(): array
     return compact('admin', 'company', 'customer', 'quotationTemplate', 'invoiceTemplate', 'quotation');
 }
 
+function createInvoiceForActionTest(array $env): Invoice
+{
+    $invoice = Invoice::create([
+        'company_id' => $env['company']->id,
+        'customer_id' => $env['customer']->id,
+        'template_id' => $env['invoiceTemplate']->id,
+        'invoice_number' => 'INV-2026-0001',
+        'invoice_date' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'subtotal' => 1000,
+        'discount_type' => 'NONE',
+        'discount_value' => 0,
+        'discount_amount' => 0,
+        'tax_percentage' => 0,
+        'tax_amount' => 0,
+        'vat_enabled' => false,
+        'vat_percentage' => 0,
+        'vat_amount' => 0,
+        'additional_charges' => 0,
+        'grand_total' => 1000,
+        'amount_paid' => 1000,
+        'balance_amount' => 0,
+        'status' => 'PAID',
+        'created_by' => $env['admin']->id,
+        'company_snapshot' => $env['company']->toArray(),
+        'customer_snapshot' => $env['customer']->toArray(),
+        'template_snapshot' => $env['invoiceTemplate']->toArray(),
+    ]);
+
+    DB::table('invoice_items')->insert([
+        'invoice_id' => $invoice->id,
+        'sort_order' => 1,
+        'item_name' => 'Item 1',
+        'quantity' => 2,
+        'unit_price' => 500,
+        'discount_type' => 'NONE',
+        'discount_value' => 0,
+        'discount_amount' => 0,
+        'tax_percentage' => 0,
+        'tax_amount' => 0,
+        'line_total' => 1000,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $invoice;
+}
+
 test('view quotation details page works', function () {
     $env = setupTestEnvironment();
 
@@ -382,12 +430,7 @@ test('quotation pdf download works', function () {
 
 test('invoice pdf download works', function () {
     $env = setupTestEnvironment();
-    $env['quotation']->update(['status' => 'ACCEPTED']);
-
-    $this->actingAs($env['admin'])
-        ->post(route('quotations.convert', $env['quotation']->id));
-
-    $invoice = Invoice::latest('id')->first();
+    $invoice = createInvoiceForActionTest($env);
 
     $response = $this->actingAs($env['admin'])
         ->get(route('invoices.pdf', $invoice->id));
@@ -409,12 +452,7 @@ test('quotations index displays view and edit actions', function () {
 
 test('invoices index displays view and pdf actions', function () {
     $env = setupTestEnvironment();
-    $env['quotation']->update(['status' => 'ACCEPTED']);
-
-    $this->actingAs($env['admin'])
-        ->post(route('quotations.convert', $env['quotation']->id));
-
-    $invoice = Invoice::latest('id')->first();
+    $invoice = createInvoiceForActionTest($env);
 
     $response = $this->actingAs($env['admin'])
         ->get(route('invoices.index', ['company_id' => $env['company']->id]));
@@ -437,10 +475,7 @@ test('cannot edit a converted quotation', function () {
 
 test('edit invoice page loads with prefilled data', function () {
     $env = setupTestEnvironment();
-    $env['quotation']->update(['status' => 'ACCEPTED']);
-    $this->actingAs($env['admin'])
-        ->post(route('quotations.convert', $env['quotation']->id));
-    $invoice = Invoice::latest('id')->first();
+    $invoice = createInvoiceForActionTest($env);
 
     $response = $this->actingAs($env['admin'])
         ->get(route('invoices.edit', $invoice->id));
@@ -453,10 +488,7 @@ test('edit invoice page loads with prefilled data', function () {
 
 test('update invoice updates details items and totals and logs activity', function () {
     $env = setupTestEnvironment();
-    $env['quotation']->update(['status' => 'ACCEPTED']);
-    $this->actingAs($env['admin'])
-        ->post(route('quotations.convert', $env['quotation']->id));
-    $invoice = Invoice::latest('id')->first();
+    $invoice = createInvoiceForActionTest($env);
 
     $updateData = [
         'customer_id' => $env['customer']->id,
@@ -531,9 +563,29 @@ test('activity logs are properly populated across operations and displayed on in
         ->first();
     expect($acceptLog)->not->toBeNull();
 
-    // 3. Convert quotation creates log
+    // 3. Create invoice from quotation creates log
     $this->actingAs($env['admin'])
-        ->post(route('quotations.convert', $env['quotation']->id));
+        ->post(route('invoices.store'), [
+            'company_id' => $env['company']->id,
+            'customer_id' => $env['customer']->id,
+            'template_id' => $env['invoiceTemplate']->id,
+            'quotation_id' => $env['quotation']->id,
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'payment_method' => 'CASH',
+            'payment_date' => now()->toDateString(),
+            'payment_amount' => 900,
+            'items' => [
+                [
+                    'item_name' => 'Item 1',
+                    'quantity' => 2,
+                    'unit_price' => 500,
+                    'discount_type' => 'PERCENTAGE',
+                    'discount_value' => 10,
+                    'tax_percentage' => 0,
+                ],
+            ],
+        ]);
 
     $convertLog = DB::table('activity_logs')
         ->where('entity_type', 'Quotation')
@@ -563,4 +615,168 @@ test('activity logs are properly populated across operations and displayed on in
     $response->assertSee('Activity Logs');
     $response->assertSee('Quotation');
     $response->assertSee('Invoice');
+});
+
+test('quotation preview uses POST and does not persist to database', function () {
+    $env = setupTestEnvironment();
+
+    $previewPayload = [
+        'company_id' => $env['company']->id,
+        'customer_id' => $env['customer']->id,
+        'template_id' => $env['quotationTemplate']->id,
+        'quotation_date' => now()->toDateString(),
+        'expiry_date' => now()->addDays(30)->toDateString(),
+        'reference' => 'REF-PREVIEW',
+        'items' => [
+            [
+                'item_name' => 'Preview Item',
+                'description' => 'Preview Desc',
+                'quantity' => 3,
+                'unit_price' => 150,
+                'discount' => 10,
+                'tax' => 0,
+            ],
+        ],
+    ];
+
+    $countBefore = Quotation::count();
+
+    $response = $this->actingAs($env['admin'])
+        ->post(route('quotations.preview'), $previewPayload);
+
+    $response->assertStatus(200);
+    $response->assertViewIs('quotations.preview');
+    $response->assertSee('Quotation Preview');
+    $response->assertSee('Preview Item');
+
+    expect(Quotation::count())->toBe($countBefore);
+});
+
+test('quotation update uses PUT and updates the quotation', function () {
+    $env = setupTestEnvironment();
+
+    $updatePayload = [
+        'company_id' => $env['company']->id,
+        'customer_id' => $env['customer']->id,
+        'template_id' => $env['quotationTemplate']->id,
+        'quotation_date' => now()->toDateString(),
+        'expiry_date' => now()->addDays(14)->toDateString(),
+        'reference' => 'REF-UPDATED',
+        'items' => [
+            [
+                'item_name' => 'Updated Item',
+                'description' => 'Updated Desc',
+                'quantity' => 5,
+                'unit_price' => 200,
+                'discount' => 0,
+                'tax' => 0,
+            ],
+        ],
+    ];
+
+    $response = $this->actingAs($env['admin'])
+        ->put(route('quotations.update', $env['quotation']->id), $updatePayload);
+
+    $response->assertRedirect(route('quotations.show', $env['quotation']->id));
+
+    $freshQuotation = $env['quotation']->fresh();
+    expect($freshQuotation->reference)->toBe('REF-UPDATED');
+    expect((float) $freshQuotation->grand_total)->toBe(1000.0);
+});
+
+test('invoice preview uses POST without payments (edit view payload) and does not persist to database', function () {
+    $env = setupTestEnvironment();
+
+    $invoice = createInvoiceForActionTest($env);
+
+    $countBefore = Invoice::count();
+
+    $previewPayload = [
+        'company_id' => $env['company']->id,
+        'customer_id' => $env['customer']->id,
+        'template_id' => $env['invoiceTemplate']->id,
+        'invoice_id' => $invoice->id,
+        'invoice_number' => $invoice->invoice_number,
+        'invoice_date' => now()->toDateString(),
+        'items' => [
+            [
+                'item_name' => 'Preview Invoice Item',
+                'description' => 'Preview Inv Desc',
+                'quantity' => 2,
+                'unit' => 'pcs',
+                'unit_price' => 500,
+                'discount_type' => 'NONE',
+                'discount_value' => 0,
+                'tax_percentage' => 0,
+            ],
+        ],
+    ];
+
+    $response = $this->actingAs($env['admin'])
+        ->post(route('invoices.preview'), $previewPayload);
+
+    $response->assertStatus(200);
+    $response->assertViewIs('invoices.pdf');
+
+    expect(Invoice::count())->toBe($countBefore);
+});
+
+test('invoice update uses PUT and updates the invoice', function () {
+    $env = setupTestEnvironment();
+
+    $invoice = createInvoiceForActionTest($env);
+
+    $updatePayload = [
+        'company_id' => $env['company']->id,
+        'customer_id' => $env['customer']->id,
+        'template_id' => $env['invoiceTemplate']->id,
+        'invoice_date' => now()->toDateString(),
+        'subject' => 'Updated Subject',
+        'reference' => 'REF-INV-UPDATED',
+        'additional_charges' => 50,
+        'items' => [
+            [
+                'item_name' => 'Updated Item 1',
+                'description' => 'Desc 1',
+                'quantity' => 2,
+                'unit' => 'pcs',
+                'unit_price' => 400,
+                'discount_type' => 'NONE',
+                'discount_value' => 0,
+                'tax_percentage' => 0,
+            ],
+        ],
+    ];
+
+    $response = $this->actingAs($env['admin'])
+        ->put(route('invoices.update', $invoice->id), $updatePayload);
+
+    $response->assertRedirect(route('invoices.show', $invoice->id));
+
+    $freshInvoice = $invoice->fresh();
+    expect($freshInvoice->subject)->toBe('Updated Subject');
+    expect($freshInvoice->reference)->toBe('REF-INV-UPDATED');
+    expect((float) $freshInvoice->grand_total)->toBe(850.0);
+});
+
+test('edit quotation and edit invoice blade views have correct method toggling for preview and update', function () {
+    $env = setupTestEnvironment();
+
+    $invoice = createInvoiceForActionTest($env);
+
+    // Quotation edit page
+    $qResponse = $this->actingAs($env['admin'])
+        ->get(route('quotations.edit', $env['quotation']->id));
+    $qResponse->assertStatus(200);
+    $qResponse->assertSee('id="quotationFormMethod"', false);
+    $qResponse->assertSee('formaction="'.route('quotations.preview').'"', false);
+    $qResponse->assertSee('formmethod="POST"', false);
+
+    // Invoice edit page
+    $iResponse = $this->actingAs($env['admin'])
+        ->get(route('invoices.edit', $invoice->id));
+    $iResponse->assertStatus(200);
+    $iResponse->assertSee('id="invoiceFormMethod"', false);
+    $iResponse->assertSee('formaction="'.route('invoices.preview').'"', false);
+    $iResponse->assertSee('formmethod="POST"', false);
 });
